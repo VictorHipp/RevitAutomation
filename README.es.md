@@ -23,9 +23,9 @@ Cada operación se agrupa en un solo paso de deshacer (**Ctrl+Z** deshace todo) 
 | | |
 |---|---|
 | [1. Visión general](docs/es/01-vision-general.md) | Qué hace cada herramienta y cómo encajan las piezas |
-| [2. Instalación](docs/es/02-instalacion.md) | Instalar, actualizar y desinstalar el complemento |
+| [2. Descarga e instalación](docs/es/02-instalacion.md) | Descargar el proyecto, preparar el PC, crear el instalador; instalar, actualizar y desinstalar el complemento |
 | [3. Guía de uso](docs/es/03-guia-de-uso.md) | Cómo usar CAD-REV y las demás herramientas; informes y archivos de ajustes |
-| [4. Desarrollo](docs/es/04-desarrollo.md) | Requisitos, compilar cada versión de Revit, generar el instalador, **preparar un PC nuevo** |
+| [4. Desarrollo](docs/es/04-desarrollo.md) | Para quien cambia el código: Git, compilar cada versión de Revit, reglas de código |
 | [5. Arquitectura](docs/es/05-arquitectura.md) | Proyectos, flujo de procesamiento y mapa del código |
 | [6. Pruebas](docs/es/06-pruebas.md) | Pruebas automáticas fuera de Revit, pruebas de herramientas, comparación de planes |
 | [7. Estado y limitaciones](docs/es/07-estado-y-limitaciones.md) | Qué está verificado, qué falta comprobar en Revit, límites conocidos |
@@ -33,17 +33,21 @@ Cada operación se agrupa en un solo paso de deshacer (**Ctrl+Z** deshace todo) 
 
 Las especificaciones de diseño y el historial de cambios detallados están en [`codigo/docs/`](codigo/docs/), [`codigo/LEEME_VERSION_COMBINADA.txt`](codigo/LEEME_VERSION_COMBINADA.txt) y [`codigo/TRASPASO_PROYECTO.txt`](codigo/TRASPASO_PROYECTO.txt).
 
-## Inicio rápido (desarrollo)
+## Inicio rápido
 
-```powershell
-git clone https://github.com/VictorHipp/RevitAutomation.git
-cd RevitAutomation\codigo
-.\PREPARAR_PC.cmd          # 1. instala lo que falte: SDK de .NET 10 y 8, Git y GitHub CLI (§ 4.1)
-# 2. Copie las 12 familias de uniones en codigo\familias_uniones\   → § 4.2
-.\CREAR_INSTALADOR.cmd     # pasa las pruebas, compila las 5 versiones de Revit y crea ..\Instalar_RevitAutomation.exe (§ 4.3)
-```
+1. Instale **Git**: <https://git-scm.com/download/win>.
+2. Abra PowerShell en la carpeta donde quiera guardar el proyecto (en el Explorador, escriba `powershell` en la barra de direcciones) y escriba:
 
-Paso a paso: [herramientas que hay que descargar](docs/es/04-desarrollo.md#41-herramientas-que-hay-que-descargar) · [conseguir las 12 familias](docs/es/04-desarrollo.md#42-conseguir-las-12-familias-de-uniones) · [crear el instalador](docs/es/04-desarrollo.md#43-crear-el-instalador-paso-a-paso) · [preparar un PC nuevo](docs/es/04-desarrollo.md#44-preparar-un-pc-nuevo).
+   ```powershell
+   git clone https://github.com/VictorHipp/RevitAutomation.git
+   ```
+
+3. En `RevitAutomation\codigo`, doble clic en **`PREPARAR_PC.cmd`**: instala los SDK de .NET 10 y 8.
+4. Copie las 12 familias de uniones en `codigo\familias_uniones\`.
+5. Doble clic en **`CREAR_INSTALADOR.cmd`**: crea `Instalar_RevitAutomation.exe` junto a la carpeta `codigo`.
+6. Cierre Revit y haga doble clic en **`Instalar_RevitAutomation.exe`**.
+
+Paso a paso: [Descarga e instalación](docs/es/02-instalacion.md). Para cambiar el código: [Desarrollo](docs/es/04-desarrollo.md).
 
 ## Estructura del repositorio
 

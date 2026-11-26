@@ -25,9 +25,9 @@ Every operation is wrapped in a single undo step (**Ctrl+Z** undoes the whole ru
 | | |
 |---|---|
 | [1. Overview](docs/en/01-overview.md) | What each tool does and how the pieces fit together |
-| [2. Installation](docs/en/02-installation.md) | Installing, updating and uninstalling the add-in |
+| [2. Download and installation](docs/en/02-installation.md) | Downloading the project, setting up the PC, creating the installer; installing, updating and uninstalling the add-in |
 | [3. User guide](docs/en/03-user-guide.md) | How to use CAD-REV and the other tools; reports and settings files |
-| [4. Development](docs/en/04-development.md) | Prerequisites, building for each Revit version, generating the installer, **setting up a new PC** |
+| [4. Development](docs/en/04-development.md) | For people who change the code: Git, building each Revit version, coding rules |
 | [5. Architecture](docs/en/05-architecture.md) | Projects, processing pipeline and source map |
 | [6. Testing](docs/en/06-testing.md) | Automated tests outside Revit, tool harnesses, plan comparison |
 | [7. Status and limitations](docs/en/07-status-and-limitations.md) | What is verified, what is pending inside Revit, known limits |
@@ -35,17 +35,21 @@ Every operation is wrapped in a single undo step (**Ctrl+Z** undoes the whole ru
 
 Detailed design specifications and change history (Spanish only) live in [`codigo/docs/`](codigo/docs/), [`codigo/LEEME_VERSION_COMBINADA.txt`](codigo/LEEME_VERSION_COMBINADA.txt) and [`codigo/TRASPASO_PROYECTO.txt`](codigo/TRASPASO_PROYECTO.txt).
 
-## Quick start (developers)
+## Quick start
 
-```powershell
-git clone https://github.com/VictorHipp/RevitAutomation.git
-cd RevitAutomation\codigo
-.\PREPARAR_PC.cmd          # 1. installs what is missing: .NET 10 and 8 SDKs, Git and GitHub CLI (§ 4.1)
-# 2. Copy the 12 fitting families into codigo\familias_uniones\   → § 4.2
-.\CREAR_INSTALADOR.cmd     # runs all tests, builds the 5 Revit versions and creates ..\Instalar_RevitAutomation.exe (§ 4.3)
-```
+1. Install **Git**: <https://git-scm.com/download/win>.
+2. Open PowerShell in the folder where you want to keep the project (in File Explorer, type `powershell` in the address bar) and type:
 
-Step by step: [tools to download](docs/en/04-development.md#41-tools-to-download) · [getting the 12 families](docs/en/04-development.md#42-getting-the-12-fitting-families) · [creating the installer](docs/en/04-development.md#43-creating-the-installer-step-by-step) · [setting up a new PC](docs/en/04-development.md#44-setting-up-a-new-pc).
+   ```powershell
+   git clone https://github.com/VictorHipp/RevitAutomation.git
+   ```
+
+3. In `RevitAutomation\codigo`, double-click **`PREPARAR_PC.cmd`**: it installs the .NET 10 and 8 SDKs.
+4. Copy the 12 fitting families into `codigo\familias_uniones\`.
+5. Double-click **`CREAR_INSTALADOR.cmd`**: it creates `Instalar_RevitAutomation.exe` next to the `codigo` folder.
+6. Close Revit and double-click **`Instalar_RevitAutomation.exe`**.
+
+Step by step: [Download and installation](docs/en/02-installation.md). To change the code: [Development](docs/en/04-development.md).
 
 ## Repository layout
 

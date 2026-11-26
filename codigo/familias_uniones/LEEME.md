@@ -29,11 +29,11 @@ Son familias de la **biblioteca de contenido de Autodesk Revit** (biblioteca mé
 
 ## Cómo descargarlas y dónde
 
-Instrucciones completas, con un script que las copia solas: [Desarrollo § 4.2](../../docs/es/04-desarrollo.md#42-conseguir-las-12-familias-de-uniones). En resumen:
+Instrucciones completas, con un script que las copia solas: [Descarga e instalación § 2.4](../../docs/es/02-instalacion.md#24-conseguir-las-12-familias-de-uniones). En resumen:
 
 1. **Desde su copia privada** (USB, nube privada): copie los 12 archivos aquí después del `git clone`.
 2. **Desde su cuenta de Autodesk:** <https://manage.autodesk.com> → **Productos y servicios** → **Revit** → año → **Bibliotecas** → descargue el paquete de **España** y ejecútelo. Se instala en `C:\ProgramData\Autodesk\RVT <año>\Libraries\` (carpeta oculta); copie desde ahí los 12 archivos.
 3. **Desde Revit (2021.1 o posterior):** **Insertar › Cargar familia de Autodesk** → busque el nombre → **Cargar**; después, en el Navegador de proyectos, clic derecho sobre la familia → **Guardar…** como `.rfa` en esta carpeta.
 4. **Familias equivalentes** con otros nombres: CAD-REV reconoce las familias de unión por el significado de su nombre (`Core/FittingNames.cs`) y comprueba su categoría y su tipo de pieza al cargarlas.
 
-Después, genere el instalador: [Desarrollo § 4.3](../../docs/es/04-desarrollo.md#43-crear-el-instalador-paso-a-paso).
+Después, genere el instalador: [Descarga e instalación § 2.5](../../docs/es/02-instalacion.md#25-crear-el-instalador).

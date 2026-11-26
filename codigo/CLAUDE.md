@@ -9,7 +9,7 @@ RevitAutomation is a C# add-in for Revit 2023, 2024, 2025, 2026 and 2027 with a 
 
 ## Build
 
-From the project root in PowerShell, use the .NET 10 SDK with the .NET 8 SDK in the same .NET folder (2025/2026 and the engine tests use .NET 8). If it is not on `PATH`, point `DOTNET_ROOT` at its folder. `PREPARAR_PC.cmd` (`preparar_pc.ps1`) installs whatever is missing of the .NET 10 and 8 SDKs, Git and GitHub CLI for the user, through winget or the official direct links with a signature check.
+From the project root in PowerShell, use the .NET 10 SDK with the .NET 8 SDK in the same .NET folder (2025/2026 and the engine tests use .NET 8). If it is not on `PATH`, point `DOTNET_ROOT` at its folder. `PREPARAR_PC.cmd` (`preparar_pc.ps1`) installs whatever is missing of the .NET 10 and 8 SDKs and Git (GitHub CLI only if the user answers that they will develop), through winget or the official direct links with a signature check.
 
 ```powershell
 $env:DOTNET_ROOT = "$env:USERPROFILE\.dotnet"

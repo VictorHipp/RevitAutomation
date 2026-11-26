@@ -1,14 +1,16 @@
 ﻿# Prepara un PC para compilar RevitAutomation: instala lo que falte de
 #   - SDK de .NET 10 (Revit 2027, el instalador y las versiones 2023/2024 con .NET Framework 4.8),
 #   - SDK de .NET 8 (Revit 2025/2026 y las pruebas del motor),
-#   - Git para Windows y GitHub CLI.
+#   - Git para Windows (descargar y actualizar el repositorio),
+#   - GitHub CLI, solo si la persona va a desarrollar (se pregunta).
 # Lo ya instalado se salta. Usa winget si está disponible; si no, descarga el instalador oficial desde su enlace
 # directo, comprueba su firma digital y lo ejecuta sin ventanas. Windows pide permiso de administrador una sola vez.
 # Uso: doble clic en PREPARAR_PC.cmd, o:
-#      powershell -ExecutionPolicy Bypass -File preparar_pc.ps1 [-SoloDotnet]
+#      powershell -ExecutionPolicy Bypass -File preparar_pc.ps1 [-SoloDotnet] [-Desarrollo]
 # -SoloDotnet: solo los dos SDK de .NET (lo usa crear_instalador.ps1).
+# -Desarrollo: instala también GitHub CLI sin preguntar.
 # -Elevado / -Instalar: uso interno (la copia que se ejecuta como administrador).
-param([switch]$SoloDotnet, [switch]$Elevado, [string]$Instalar)
+param([switch]$SoloDotnet, [switch]$Desarrollo, [switch]$Elevado, [string]$Instalar)
 
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
@@ -120,6 +122,7 @@ function Get-Estado {
 function Show-Estado($estado) {
     foreach ($e in $estado) {
         if ($e.Instalada) { Write-Host ("  [OK]    {0}: {1}" -f $e.Nombre, $e.Detalle) -ForegroundColor Green }
+        elseif ($omitidas -contains $e.Clave) { Write-Host ("  [NO]    {0}: no se instala (solo hace falta para desarrollar)" -f $e.Nombre) -ForegroundColor DarkGray }
         else { Write-Host ("  [FALTA] {0}: {1}" -f $e.Nombre, $e.Detalle) -ForegroundColor Yellow }
     }
 }
@@ -247,9 +250,21 @@ function Fallo($que, $como) {
 
 Write-Host '=== RevitAutomation: preparar este PC para compilar ===' -ForegroundColor Cyan
 Write-Host 'Comprobando lo que ya está instalado...'
+$omitidas = @()
 $estado = @(Get-Estado)
 Show-Estado $estado
-$faltan = @($estado | Where-Object { -not $_.Instalada } | ForEach-Object { $_.Clave })
+
+# GitHub CLI solo hace falta para desarrollar y subir cambios: si falta, se pregunta.
+if (-not $Desarrollo -and ($estado | Where-Object { $_.Clave -eq 'gh' -and -not $_.Instalada })) {
+    $interactivo = [Environment]::UserInteractive -and -not [Console]::IsInputRedirected
+    Write-Host ''
+    $respuesta = if ($interactivo) { Read-Host '¿Va a desarrollar el complemento o subir cambios a GitHub? (S/N)' } else { 'N' }
+    if ($respuesta -notmatch '^\s*[sSyY]') {
+        $omitidas += 'gh'
+        Write-Host '  GitHub CLI no se instala. Si más adelante va a desarrollar, vuelva a ejecutar PREPARAR_PC.cmd y responda «S».'
+    }
+}
+$faltan = @($estado | Where-Object { -not $_.Instalada -and $omitidas -notcontains $_.Clave } | ForEach-Object { $_.Clave })
 
 if ($faltan.Count) {
     $nombres = ($faltan | ForEach-Object { $herramientas[$_].Nombre }) -join ', '
@@ -279,7 +294,7 @@ if ($faltan.Count) {
 $git = Find-Git
 if ($git) { try { & $git config --global core.longpaths true } catch { } }
 
-$siguenFaltando = @($estado | Where-Object { -not $_.Instalada })
+$siguenFaltando = @($estado | Where-Object { -not $_.Instalada -and $omitidas -notcontains $_.Clave })
 if ($siguenFaltando.Count) {
     $lista = ($siguenFaltando | ForEach-Object { "$($_.Nombre) ($($herramientas[$_.Clave].Manual))" }) -join '; '
     Fallo "Sigue faltando: $(($siguenFaltando | ForEach-Object { $_.Nombre }) -join ', ')." `
@@ -289,7 +304,7 @@ if ($siguenFaltando.Count) {
 Write-Host ''
 Write-Host 'TODO LISTO.' -ForegroundColor Green
 if (-not $SoloDotnet) {
-    Write-Host 'Siguiente paso: ponga las 12 familias de uniones en familias_uniones\ y haga doble clic en CREAR_INSTALADOR.cmd.'
-    Write-Host 'Si va a usar la consola, cierre y vuelva a abrir PowerShell para que encuentre los programas nuevos.'
+    Write-Host 'Siguiente paso: ponga las 12 familias de uniones en la carpeta familias_uniones (Instalación, paso 2.4)'
+    Write-Host 'y haga doble clic en CREAR_INSTALADOR.cmd (paso 2.5).'
 }
 exit 0

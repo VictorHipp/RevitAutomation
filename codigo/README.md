@@ -40,8 +40,9 @@ desplegable:
   avisa (quitarlo necesita administrador).
 - **Sin ventana:** `Instalar_RevitAutomation.exe /silencioso [/versiones:2023,2024,2025,2026,2027] [/familias:"carpeta"]` y
   `Instalar_RevitAutomation.exe /desinstalar /silencioso`. Resultado en `%LOCALAPPDATA%\RevitAutomation\instalacion.txt`.
-- **Preparar el PC:** doble clic en `PREPARAR_PC.cmd`. Instala lo que falte (SDK de .NET 10 y 8, Git y GitHub CLI) con
-  `winget` o, si no está, desde los enlaces directos oficiales, comprobando la firma. Pide permiso de administrador una vez.
+- **Preparar el PC:** doble clic en `PREPARAR_PC.cmd`. Instala lo que falte (SDK de .NET 10 y 8 y Git; GitHub CLI solo si
+  responde que va a desarrollar) con `winget` o, si no está, desde los enlaces directos oficiales, comprobando la firma.
+  Pide permiso de administrador una vez.
 - **Generarlo:** doble clic en `CREAR_INSTALADOR.cmd` (hacen falta los SDK de .NET 10 y 8; si faltan, pregunta si instalarlos). Pasa todas las pruebas, compila las
   tres versiones contra su API (la de Revit instalado o, si no, el paquete NuGet) sin símbolos de depuración, comprueba
   que no llevan rutas del equipo y deja el `.exe` en la carpeta que contiene la del código.
