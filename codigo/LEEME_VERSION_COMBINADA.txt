@@ -228,7 +228,7 @@ Comprobado (fuera de Revit, en este equipo)
 Cómo probarlo en el otro PC
 ---------------------------
 1. Copie la carpeta CadMepRevit_Combinado completa al otro PC.
-2. Cierre Revit 2025 y 2027. Ese PC necesita el SDK de .NET 10.
+2. Cierre Revit 2025 y 2027. Ese PC necesita los SDK de .NET 10 y 8: doble clic en PREPARAR_PC.cmd.
 3. Doble clic en instalar.cmd. Pasa las pruebas, compila e instala. Sustituye cualquier versión anterior de
    CAD MEP, porque usa el mismo identificador. Para volver a la anterior, ejecute instalar.cmd en su carpeta.
 4. En Revit, cree un proyecto nuevo con la plantilla «Sistemas» (Systems-DefaultESPESP.rte). Con «Construcción»

@@ -38,7 +38,7 @@ Las especificaciones de diseño y el historial de cambios detallados están en [
 ```powershell
 git clone https://github.com/VictorHipp/RevitAutomation.git
 cd RevitAutomation\codigo
-# 1. Instale los SDK de .NET 10 y 8, y Git                 → docs/es/04-desarrollo.md § 4.1
+.\PREPARAR_PC.cmd          # 1. instala lo que falte: SDK de .NET 10 y 8, Git y GitHub CLI (§ 4.1)
 # 2. Copie las 12 familias de uniones en codigo\familias_uniones\   → § 4.2
 .\CREAR_INSTALADOR.cmd     # pasa las pruebas, compila las 5 versiones de Revit y crea ..\Instalar_RevitAutomation.exe (§ 4.3)
 ```

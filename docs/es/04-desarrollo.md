@@ -6,6 +6,10 @@ Salvo que se indique otra cosa, todos los comandos se ejecutan en **PowerShell**
 
 ## 4.1 Herramientas que hay que descargar
 
+**La forma más fácil, sin consola:** haga doble clic en **`codigo\PREPARAR_PC.cmd`**. Comprueba qué falta de la tabla siguiente (SDK de .NET 10 y 8, Git para Windows y GitHub CLI), salta lo que ya esté instalado e instala el resto sin más clics: Windows pide permiso de administrador una vez (pulse «Sí»). Usa `winget` si el PC lo tiene; si no, descarga el instalador oficial desde su enlace directo, comprueba que está firmado por su fabricante y lo ejecuta. Al terminar activa las rutas largas de Git y muestra «TODO LISTO» o qué ha fallado y cómo corregirlo.
+
+Si prefiere instalarlo a mano, estas son las herramientas:
+
 | Herramienta | Para qué | ¿Obligatoria? | Descarga oficial | O con winget |
 |---|---|---|---|---|
 | **SDK de .NET 10** (el *SDK*, no solo el runtime) | Compilar el complemento para Revit 2027 (`net10.0-windows`) y crear el instalador. También compila las versiones de .NET Framework 4.8 (2023/2024): sus ensamblados de referencia se descargan de NuGet | **Sí** | <https://dotnet.microsoft.com/download/dotnet/10.0> → *SDK* → Windows x64 | `winget install --id Microsoft.DotNet.SDK.10 -e --source winget` |
@@ -17,6 +21,7 @@ Salvo que se indique otra cosa, todos los comandos se ejecutan en **PowerShell**
 
 Notas:
 
+- Los dos SDK de .NET tienen que estar en la misma carpeta (la normal es `C:\Program Files\dotnet`). Es lo que hacen los instaladores oficiales, `winget` y `PREPARAR_PC.cmd`.
 - `winget` viene con Windows 10/11 («Instalador de aplicación»). Ejecute los comandos en una ventana normal de PowerShell; algunos instaladores muestran un aviso de permisos de Windows.
 - Cierre y vuelva a abrir PowerShell después de instalar para que encuentre los comandos nuevos.
 - Compruebe la instalación:
@@ -61,7 +66,7 @@ Elija una de estas opciones (por orden de preferencia):
 
 ## 4.3 Crear el instalador paso a paso
 
-1. Instale los **SDK de .NET 10 y 8** ([4.1](#41-herramientas-que-hay-que-descargar)).
+1. Instale los **SDK de .NET 10 y 8**: doble clic en `codigo\PREPARAR_PC.cmd` ([4.1](#41-herramientas-que-hay-que-descargar)). Si se le olvida, `CREAR_INSTALADOR.cmd` lo detecta y le pregunta si quiere instalarlos.
 2. Ponga las **12 familias** en `codigo\familias_uniones\` ([4.2](#42-conseguir-las-12-familias-de-uniones)).
 3. Abra la carpeta `codigo` en el Explorador y haga **doble clic en `CREAR_INSTALADOR.cmd`**. O, desde PowerShell:
 
@@ -86,11 +91,11 @@ powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -SinPruebas       
 powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -Salida C:\Temp\salida  # deja el .exe en otra carpeta
 ```
 
-`CREAR_INSTALADOR.cmd` no instala nada en el equipo. `instalar.cmd` hace lo mismo y además instala el complemento sin ventana para el usuario actual (cierre Revit antes).
+`CREAR_INSTALADOR.cmd` no instala el complemento en el equipo (solo los SDK de .NET si faltan y usted responde «S»). `instalar.cmd` hace lo mismo y además instala el complemento sin ventana para el usuario actual (cierre Revit antes).
 
 ### Qué hace el script
 
-1. Busca un SDK de .NET ≥ 10 (`DOTNET_ROOT`, `%USERPROFILE%\.dotnet` o el `PATH`).
+1. Busca una carpeta de .NET con el SDK 10 (o posterior) y el SDK 8 (`DOTNET_ROOT`, `%USERPROFILE%\.dotnet`, `C:\Program Files\dotnet` o el `PATH`). Si falta alguno, pregunta «¿Instalarlo ahora? (S/N)» y, con «S», ejecuta `preparar_pc.ps1 -SoloDotnet`.
 2. Pasa las pruebas del motor (`tests/CadMepRevit.Tests`) y cada prueba de herramienta de `tests/RevitAutomation.Pruebas`.
 3. Compila `RevitAutomation.csproj` para 2023, 2024 (`net48`), 2025, 2026 (`net8.0-windows`) y 2027 (`net10.0-windows`) **sin símbolos de depuración**, cada una en su carpeta `obj\paquete\<año>`, y quita los `RevitAPI*.dll` y los `.pdb`.
 4. Añade la guía de usuario, los planos de ejemplo y las `Familias` de reserva.
@@ -101,7 +106,9 @@ powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -Salida C:\Temp\sa
 
 | Mensaje | Causa y solución |
 |---|---|
-| «No se encuentra el SDK de .NET 10 o posterior» | Solo está el runtime, o el SDK es más antiguo. Instale el **SDK** 10 ([4.1](#41-herramientas-que-hay-que-descargar)) y vuelva a abrir PowerShell. |
+| «Falta el SDK de .NET 10 / 8» o «No se encuentra el SDK de .NET …» | Falta uno de los dos SDK, solo está el runtime, o están en carpetas distintas. Responda «S» a la pregunta o haga doble clic en `PREPARAR_PC.cmd` ([4.1](#41-herramientas-que-hay-que-descargar)). |
+| `PREPARAR_PC.cmd`: «No se ha podido abrir la instalación como administrador» | Ha pulsado «No» en el aviso de Windows, o su usuario no puede instalar programas. Repita y pulse «Sí», o pida a informática que instale lo que indica. |
+| `PREPARAR_PC.cmd`: «La firma digital del archivo descargado no es válida…» | El archivo descargado no es el original (descarga cortada o un proxy que lo modifica). No se ejecuta. Repita o descárguelo desde el enlace oficial que indica. |
 | «Las pruebas automáticas han fallado» | Ha fallado una prueba; lea las líneas anteriores. Para generar igualmente: `crear_instalador.ps1 -SinPruebas`. |
 | «La compilación para Revit <año> ha fallado» | Normalmente falta Internet para NuGet, o hay un error en el código. Compruebe la conexión y los mensajes del compilador. |
 | «No se encuentran las familias de uniones» | `codigo\familias_uniones\` no tiene ningún `.rfa` ([4.2](#42-conseguir-las-12-familias-de-uniones)). |
@@ -112,8 +119,12 @@ powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -Salida C:\Temp\sa
 
 Sí: puede descargar el proyecto completo desde GitHub y seguir trabajando. Todo está en el repositorio **salvo** lo indicado en [4.5](#45-archivos-que-no-van-en-el-repositorio).
 
+**Sin consola:** si aún no tiene el repositorio ni Git, en la página de GitHub pulse **Code › Download ZIP**, descomprímalo y haga doble clic en `codigo\PREPARAR_PC.cmd`. Instala los SDK de .NET 10 y 8, Git y GitHub CLI, y activa las rutas largas de Git. Después clone el repositorio (paso 3) y borre la carpeta del ZIP.
+
+**Con la consola:**
+
 ```powershell
-# 1. Herramientas (vea 4.1)
+# 1. Herramientas (vea 4.1). O, en la carpeta codigo, .\PREPARAR_PC.cmd
 winget install --id Git.Git -e --source winget
 winget install --id Microsoft.DotNet.SDK.10 -e --source winget   # Revit 2027, instalador y versiones 2023/2024
 winget install --id Microsoft.DotNet.SDK.8 -e --source winget    # Revit 2025/2026 (versiones anteriores a 2027) y pruebas

@@ -18,25 +18,55 @@ function Fallo($que, $como) {
 
 Write-Host '=== RevitAutomation: crear el instalador Instalar_RevitAutomation.exe ===' -ForegroundColor Cyan
 
-# 1) SDK de .NET 10 o posterior (compila las versiones para Revit 2023 a 2027; 2023 y 2024 con .NET Framework 4.8)
-$candidatos = @()
-if ($env:DOTNET_ROOT) { $candidatos += Join-Path $env:DOTNET_ROOT 'dotnet.exe' }
-$candidatos += Join-Path $env:USERPROFILE '.dotnet\dotnet.exe'
-$cmd = Get-Command dotnet -ErrorAction SilentlyContinue
-if ($cmd) { $candidatos += $cmd.Source }
-$dotnet = $null
-foreach ($c in $candidatos) {
-    if (-not (Test-Path $c)) { continue }
-    $sdks = @(& $c --list-sdks 2>$null)
-    if ($sdks | Where-Object { $_ -match '^(\d+)\.' -and [int]$Matches[1] -ge 10 }) { $dotnet = $c; break }
+# 1) SDK de .NET 10 o posterior (Revit 2027, el instalador y 2023/2024 con .NET Framework 4.8) y SDK de .NET 8
+#    (Revit 2025/2026 y las pruebas del motor), los dos en la misma carpeta de .NET.
+#    Si falta alguno, ofrece instalarlo con preparar_pc.ps1 (PREPARAR_PC.cmd).
+function Find-Dotnet {
+    $programFiles = if ($env:ProgramW6432) { $env:ProgramW6432 } else { $env:ProgramFiles }
+    $raices = @()
+    if ($env:DOTNET_ROOT) { $raices += $env:DOTNET_ROOT }
+    if ($env:USERPROFILE) { $raices += Join-Path $env:USERPROFILE '.dotnet' }
+    if ($programFiles) { $raices += Join-Path $programFiles 'dotnet' }
+    $cmd = Get-Command dotnet -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($cmd) { $raices += Split-Path -Parent $cmd.Source }
+    $todas = @()
+    foreach ($r in $raices) {
+        $exe = Join-Path $r 'dotnet.exe'
+        if (-not (Test-Path $exe)) { continue }
+        $mayores = @(Get-ChildItem (Join-Path $r 'sdk') -Directory -ErrorAction SilentlyContinue |
+                     Where-Object { $_.Name -match '^(\d+)\.\d+\.\d+' -and (Test-Path (Join-Path $_.FullName 'dotnet.dll')) } |
+                     ForEach-Object { [int]($_.Name -split '\.')[0] })
+        $todas += $mayores
+        if (@($mayores | Where-Object { $_ -ge 10 }).Count -and ($mayores -contains 8)) { return @{ Ruta = $exe; Faltan = @() } }
+    }
+    $faltan = @()
+    if (-not @($todas | Where-Object { $_ -ge 10 }).Count) { $faltan += 'el SDK de .NET 10' }
+    if ($todas -notcontains 8) { $faltan += 'el SDK de .NET 8' }
+    if (-not $faltan.Count) { $faltan += 'un SDK de .NET 10 y uno de .NET 8 en la misma carpeta (ahora están en carpetas distintas)' }
+    return @{ Ruta = $null; Faltan = $faltan }
 }
-if (-not $dotnet) {
-    Fallo 'No se encuentra el SDK de .NET 10 o posterior.' 'Instálelo desde https://dotnet.microsoft.com/download (SDK, no solo el runtime) y repita.'
+$busqueda = Find-Dotnet
+if (-not $busqueda.Ruta) {
+    $preparar = Join-Path $root 'preparar_pc.ps1'
+    Write-Host "Falta $($busqueda.Faltan -join ' y ')." -ForegroundColor Yellow
+    $interactivo = [Environment]::UserInteractive -and -not [Console]::IsInputRedirected
+    if ($interactivo -and (Test-Path $preparar)) {
+        $respuesta = Read-Host '¿Instalarlo ahora? (S/N)'
+        if ($respuesta -match '^\s*[sSyY]') {
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $preparar -SoloDotnet
+            $env:Path = (@([Environment]::GetEnvironmentVariable('Path', 'Machine'), [Environment]::GetEnvironmentVariable('Path', 'User')) | Where-Object { $_ }) -join ';'
+            $busqueda = Find-Dotnet
+        }
+    }
+    if (-not $busqueda.Ruta) {
+        Fallo "No se encuentra $($busqueda.Faltan -join ' ni ')." 'Haga doble clic en PREPARAR_PC.cmd (en esta misma carpeta) para instalar los SDK de .NET 10 y 8, o instálelos desde https://dotnet.microsoft.com/download (SDK, no solo el runtime), y repita.'
+    }
 }
+$dotnet = $busqueda.Ruta
 $env:DOTNET_ROOT = Split-Path -Parent $dotnet
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_NOLOGO = '1'
-$env:DOTNET_ROLL_FORWARD = 'Major'   # las pruebas (.NET 8) también corren con solo el SDK 10
+$env:DOTNET_ROLL_FORWARD = 'Major'   # por si las pruebas (.NET 8) se ejecutan con otro .NET más nuevo
 Write-Host "SDK de .NET: $dotnet"
 
 # 2) Pruebas automáticas (fuera de Revit). Los archivos que generan quedan en obj, no en ejemplos.

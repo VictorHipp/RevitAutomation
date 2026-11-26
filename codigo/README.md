@@ -40,7 +40,9 @@ desplegable:
   avisa (quitarlo necesita administrador).
 - **Sin ventana:** `Instalar_RevitAutomation.exe /silencioso [/versiones:2023,2024,2025,2026,2027] [/familias:"carpeta"]` y
   `Instalar_RevitAutomation.exe /desinstalar /silencioso`. Resultado en `%LOCALAPPDATA%\RevitAutomation\instalacion.txt`.
-- **Generarlo:** doble clic en `CREAR_INSTALADOR.cmd` (hace falta el SDK de .NET 10). Pasa todas las pruebas, compila las
+- **Preparar el PC:** doble clic en `PREPARAR_PC.cmd`. Instala lo que falte (SDK de .NET 10 y 8, Git y GitHub CLI) con
+  `winget` o, si no está, desde los enlaces directos oficiales, comprobando la firma. Pide permiso de administrador una vez.
+- **Generarlo:** doble clic en `CREAR_INSTALADOR.cmd` (hacen falta los SDK de .NET 10 y 8; si faltan, pregunta si instalarlos). Pasa todas las pruebas, compila las
   tres versiones contra su API (la de Revit instalado o, si no, el paquete NuGet) sin símbolos de depuración, comprueba
   que no llevan rutas del equipo y deja el `.exe` en la carpeta que contiene la del código.
 - Windows puede avisar con SmartScreen porque el `.exe` no está firmado: «Más información» → «Ejecutar de todas formas».
@@ -76,7 +78,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/CadMepRevit.PlanCo
 Los planos reales de clientes son confidenciales: cópielos a una carpeta temporal solo para la prueba y
 bórrela después, junto con los archivos `FIRMAS_*.json` que genera la comparación en `Pruebas\`.
 
-- Hace falta el SDK de .NET 10, que compila las cinco versiones (2023 y 2024 con .NET Framework 4.8, sin instalar nada más: los ensamblados de referencia se descargan de NuGet).
+- Hacen falta los SDK de .NET 10 y 8 en la misma carpeta (`PREPARAR_PC.cmd` los instala). El 10 compila Revit 2027, el instalador y 2023/2024 (.NET Framework 4.8: los ensamblados de referencia se descargan de NuGet); el 8, Revit 2025/2026 y las pruebas del motor.
 - Las referencias de la API se toman de la instalación de cada Revit o de los paquetes NuGet de la
   versión correspondiente. MSBuild comprueba la versión de la API.
 - SourceLink está desactivado por problemas en unidades de red.

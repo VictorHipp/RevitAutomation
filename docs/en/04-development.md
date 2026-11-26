@@ -6,6 +6,10 @@ All commands are run in **PowerShell** from the `codigo` folder unless stated ot
 
 ## 4.1 Tools to download
 
+**The easiest way, no console:** double-click **`codigo\PREPARAR_PC.cmd`**. It checks what is missing from the table below (.NET 10 and 8 SDKs, Git for Windows and GitHub CLI), skips what is already installed and installs the rest with no further clicks: Windows asks for administrator permission once (click «Yes»). It uses `winget` when the PC has it; otherwise it downloads the official installer from its direct link, checks that it is signed by its publisher and runs it. At the end it enables Git long paths and shows «TODO LISTO» (all done) or what failed and how to fix it.
+
+If you prefer to install them by hand, these are the tools:
+
 | Tool | Needed for | Required? | Official download | Or with winget |
 |---|---|---|---|---|
 | **.NET 10 SDK** (the *SDK*, not only the runtime) | Building the add-in for Revit 2027 (`net10.0-windows`) and creating the installer. It also builds the .NET Framework 4.8 versions (2023/2024): their reference assemblies come from NuGet | **Yes** | <https://dotnet.microsoft.com/download/dotnet/10.0> → *SDK* → Windows x64 | `winget install --id Microsoft.DotNet.SDK.10 -e --source winget` |
@@ -17,6 +21,7 @@ All commands are run in **PowerShell** from the `codigo` folder unless stated ot
 
 Notes:
 
+- Both .NET SDKs must be in the same folder (normally `C:\Program Files\dotnet`). The official installers, `winget` and `PREPARAR_PC.cmd` all put them there.
 - `winget` comes with Windows 10/11 («App Installer»). Run the commands in a normal PowerShell window; some installers show a Windows permission prompt.
 - Close and reopen PowerShell after installing so the new commands are found.
 - Check the installation:
@@ -61,7 +66,7 @@ Choose one of these options (in order of preference):
 
 ## 4.3 Creating the installer, step by step
 
-1. Install the **.NET 10 and .NET 8 SDKs** ([4.1](#41-tools-to-download)).
+1. Install the **.NET 10 and .NET 8 SDKs**: double-click `codigo\PREPARAR_PC.cmd` ([4.1](#41-tools-to-download)). If you forget, `CREAR_INSTALADOR.cmd` detects it and asks whether to install them.
 2. Put the **12 families** in `codigo\familias_uniones\` ([4.2](#42-getting-the-12-fitting-families)).
 3. Open the `codigo` folder in Explorer and **double-click `CREAR_INSTALADOR.cmd`**. Or, from PowerShell:
 
@@ -86,11 +91,11 @@ powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -SinPruebas       
 powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -Salida C:\Temp\out  # write the .exe elsewhere
 ```
 
-`CREAR_INSTALADOR.cmd` installs nothing on the PC. `instalar.cmd` does the same and then installs the add-in silently for the current user (close Revit first).
+`CREAR_INSTALADOR.cmd` does not install the add-in on the PC (only the .NET SDKs, if they are missing and you answer «S»). `instalar.cmd` does the same and then installs the add-in silently for the current user (close Revit first).
 
 ### What the script does
 
-1. Finds a .NET SDK ≥ 10 (`DOTNET_ROOT`, `%USERPROFILE%\.dotnet` or `PATH`).
+1. Finds a .NET folder with the SDK 10 (or later) and the SDK 8 (`DOTNET_ROOT`, `%USERPROFILE%\.dotnet`, `C:\Program Files\dotnet` or `PATH`). If one is missing it asks «¿Instalarlo ahora? (S/N)» (install it now?) and, on «S», runs `preparar_pc.ps1 -SoloDotnet`.
 2. Runs the engine tests (`tests/CadMepRevit.Tests`) and every tool harness in `tests/RevitAutomation.Pruebas`.
 3. Builds `RevitAutomation.csproj` for 2023, 2024 (`net48`), 2025, 2026 (`net8.0-windows`) and 2027 (`net10.0-windows`) **without debug symbols**, each in its own `obj\paquete\<year>` folder, and removes `RevitAPI*.dll` and `.pdb` files.
 4. Adds the user guide, the sample drawings and the fallback `Familias`.
@@ -101,7 +106,9 @@ powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -Salida C:\Temp\ou
 
 | Message | Cause and fix |
 |---|---|
-| «No se encuentra el SDK de .NET 10 o posterior» | Only the runtime is installed, or the SDK is older. Install the **SDK** 10 ([4.1](#41-tools-to-download)) and reopen PowerShell. |
+| «Falta el SDK de .NET 10 / 8» or «No se encuentra el SDK de .NET …» | One of the two SDKs is missing, only the runtime is installed, or they are in different folders. Answer «S» to the question or double-click `PREPARAR_PC.cmd` ([4.1](#41-tools-to-download)). |
+| `PREPARAR_PC.cmd`: «No se ha podido abrir la instalación como administrador» | You clicked «No» in the Windows prompt, or your user cannot install programs. Run it again and click «Yes», or ask IT to install what it lists. |
+| `PREPARAR_PC.cmd`: «La firma digital del archivo descargado no es válida…» | The downloaded file is not the original (interrupted download or a proxy altering it). It is not run. Try again or download it from the official link shown. |
 | «Las pruebas automáticas han fallado» | A test failed; read the lines above. To build anyway: `crear_instalador.ps1 -SinPruebas`. |
 | «La compilación para Revit <year> ha fallado» | Usually no Internet for NuGet, or a code error. Check the connection and the compiler messages. |
 | «No se encuentran las familias de uniones» | `codigo\familias_uniones\` has no `.rfa` ([4.2](#42-getting-the-12-fitting-families)). |
@@ -112,8 +119,12 @@ powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -Salida C:\Temp\ou
 
 Yes: you can download the whole project from GitHub and keep working. Everything is in the repository **except** the items in [4.5](#45-what-is-not-in-the-repository).
 
+**No console:** if you do not have the repository or Git yet, on the GitHub page click **Code › Download ZIP**, unzip it and double-click `codigo\PREPARAR_PC.cmd`. It installs the .NET 10 and 8 SDKs, Git and GitHub CLI, and enables Git long paths. Then clone the repository (step 3) and delete the ZIP folder.
+
+**With the console:**
+
 ```powershell
-# 1. Tools (see 4.1)
+# 1. Tools (see 4.1). Or, in the codigo folder, .\PREPARAR_PC.cmd
 winget install --id Git.Git -e --source winget
 winget install --id Microsoft.DotNet.SDK.10 -e --source winget   # Revit 2027, the installer and 2023/2024
 winget install --id Microsoft.DotNet.SDK.8 -e --source winget    # Revit 2025/2026 (versions before 2027) and tests
