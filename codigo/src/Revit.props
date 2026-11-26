@@ -26,8 +26,8 @@
     <RevitInstallDir>C:\Program Files\Autodesk\Revit $(RevitYear)</RevitInstallDir>
     <!-- Si esa versión de Revit no está instalada en este equipo se compila con el paquete NuGet de su API. -->
     <UseNuGetRevitReferences Condition="!Exists('$(RevitInstallDir)\RevitAPI.dll')">true</UseNuGetRevitReferences>
-    <RevitApiPackageVersion Condition="'$(RevitYear)' == '2023'">2023.4.0</RevitApiPackageVersion>
-    <RevitApiPackageVersion Condition="'$(RevitYear)' == '2024'">2024.3.0</RevitApiPackageVersion>
+    <RevitApiPackageVersion Condition="'$(RevitYear)' == '2023'">2023.1.90</RevitApiPackageVersion>
+    <RevitApiPackageVersion Condition="'$(RevitYear)' == '2024'">2024.3.60</RevitApiPackageVersion>
     <RevitApiPackageVersion Condition="'$(RevitYear)' == '2025'">2025.4.60</RevitApiPackageVersion>
     <RevitApiPackageVersion Condition="'$(RevitYear)' == '2026'">2026.4.10</RevitApiPackageVersion>
     <RevitApiPackageVersion Condition="'$(RevitYear)' == '2027'">2027.4.0</RevitApiPackageVersion>

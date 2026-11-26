@@ -3,7 +3,7 @@
 # Uso: doble clic en CREAR_INSTALADOR.cmd, o:
 #      powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 [-SinPruebas] [-Salida <carpeta>]
 # Por defecto el .exe se deja en la carpeta que contiene la del código.
-param([switch]$SinPruebas, [string]$Salida)
+param([switch]$SinPruebas, [switch]$SinFamilias, [string]$Salida)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -56,6 +56,8 @@ if (-not $SinPruebas) {
 
 # 3) Compilar el complemento para cada versión de Revit, sin símbolos de depuración
 #    (así no se incrustan rutas de este equipo en los DLL).
+#    Siempre contra la API de NuGet: las DLL instaladas pueden ser de una actualización que exige un .NET más
+#    nuevo (p. ej. Revit 2025.5 referencia System.Runtime 10) y no compilarían con el framework de esa versión.
 $stage = Join-Path $root 'instalador\obj\paquete'
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 $versiones = @(
@@ -69,7 +71,7 @@ foreach ($v in $versiones) {
     Write-Host "Compilando RevitAutomation para Revit $($v.Anio)..."
     $obj = "-p:IntermediateOutputPath=obj\paquete\$($v.Anio)\"
     & $dotnet build (Join-Path $root 'src\RevitAutomation\RevitAutomation.csproj') -c Release -f $v.Tfm `
-        "-p:RevitYear=$($v.Anio)" -p:DebugType=none -p:DebugSymbols=false $obj --no-incremental `
+        "-p:RevitYear=$($v.Anio)" -p:UseNuGetRevitReferences=true -p:DebugType=none -p:DebugSymbols=false $obj --no-incremental `
         -o (Join-Path $stage $v.Anio) -nologo -v minimal
     if ($LASTEXITCODE -ne 0) { Fallo "La compilación para Revit $($v.Anio) ha fallado." 'Revise los errores anteriores. Sin Revit instalado, la API se descarga de NuGet: compruebe la conexión a Internet.' }
     Get-ChildItem (Join-Path $stage $v.Anio) -Recurse -Include *.pdb, RevitAPI*.dll | Remove-Item -Force
@@ -88,7 +90,8 @@ Get-ChildItem (Join-Path $root 'ejemplos') -Include *.dwg, *.dxf -File -Recurse 
 New-Item -ItemType Directory -Force -Path (Join-Path $comun 'Familias') | Out-Null
 Get-ChildItem (Join-Path $root 'familias_uniones') -Filter *.rfa -File -ErrorAction SilentlyContinue |
     Copy-Item -Destination (Join-Path $comun 'Familias') -Force
-if (-not (Get-ChildItem (Join-Path $comun 'Familias') -Filter *.rfa)) { Fallo 'No se encuentran las familias de uniones (familias_uniones\*.rfa).' 'Restaure la carpeta familias_uniones del proyecto y repita.' }
+if ($SinFamilias) { Write-Host 'AVISO: instalador sin familias de uniones (-SinFamilias).' -ForegroundColor Yellow }
+elseif (-not (Get-ChildItem (Join-Path $comun 'Familias') -Filter *.rfa)) { Fallo 'No se encuentran las familias de uniones (familias_uniones\*.rfa).' 'Restaure la carpeta familias_uniones del proyecto y repita.' }
 
 # 5) Comprobar que el paquete no lleva rutas ni nombres de este equipo
 function Test-Contiene([string]$archivo, [string[]]$terminos) {
