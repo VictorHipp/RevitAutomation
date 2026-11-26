@@ -4,7 +4,7 @@
 
 ## 2.1 Instalar con `Instalar_RevitAutomation.exe`
 
-El instalador **no** se guarda en el repositorio: se genera con `codigo\CREAR_INSTALADOR.cmd` (paso a paso en [Desarrollo § 4.3](04-desarrollo.md#43-crear-el-instalador-paso-a-paso); necesita el SDK de .NET 10 y las 12 familias de uniones). Queda junto a la carpeta `codigo`.
+El instalador **no** se guarda en el repositorio: se genera con `codigo\CREAR_INSTALADOR.cmd` (paso a paso en [Desarrollo § 4.3](04-desarrollo.md#43-crear-el-instalador-paso-a-paso); necesita los SDK de .NET 10 y 8 y las 12 familias de uniones). Queda junto a la carpeta `codigo`.
 
 1. Cierre Revit.
 2. Doble clic en `Instalar_RevitAutomation.exe`.

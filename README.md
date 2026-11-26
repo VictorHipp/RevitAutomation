@@ -40,7 +40,7 @@ Detailed design specifications and change history (Spanish only) live in [`codig
 ```powershell
 git clone https://github.com/VictorHipp/RevitAutomation.git
 cd RevitAutomation\codigo
-# 1. Install the .NET 10 SDK and Git            → docs/en/04-development.md § 4.1
+# 1. Install the .NET 10 and 8 SDKs, and Git    → docs/en/04-development.md § 4.1
 # 2. Copy the 12 fitting families into codigo\familias_uniones\   → § 4.2
 .\CREAR_INSTALADOR.cmd     # runs all tests, builds the 5 Revit versions and creates ..\Instalar_RevitAutomation.exe (§ 4.3)
 ```

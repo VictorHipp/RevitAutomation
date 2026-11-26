@@ -8,7 +8,8 @@ Salvo que se indique otra cosa, todos los comandos se ejecutan en **PowerShell**
 
 | Herramienta | Para qué | ¿Obligatoria? | Descarga oficial | O con winget |
 |---|---|---|---|---|
-| **SDK de .NET 10** (el *SDK*, no solo el runtime) | Compilar el complemento para las cinco versiones de Revit y crear el instalador. También compila las versiones de .NET Framework 4.8 (2023/2024): sus ensamblados de referencia se descargan de NuGet, no hay que instalar nada más | **Sí** | <https://dotnet.microsoft.com/download/dotnet/10.0> → *SDK* → Windows x64 | `winget install --id Microsoft.DotNet.SDK.10 -e --source winget` |
+| **SDK de .NET 10** (el *SDK*, no solo el runtime) | Compilar el complemento para Revit 2027 (`net10.0-windows`) y crear el instalador. También compila las versiones de .NET Framework 4.8 (2023/2024): sus ensamblados de referencia se descargan de NuGet | **Sí** | <https://dotnet.microsoft.com/download/dotnet/10.0> → *SDK* → Windows x64 | `winget install --id Microsoft.DotNet.SDK.10 -e --source winget` |
+| **SDK de .NET 8** | Las versiones anteriores a 2027: Revit 2025 y 2026 (`net8.0-windows`) y las pruebas del motor (`tests/CadMepRevit.Tests`, .NET 8). Se instala junto al SDK 10, no lo sustituye | **Sí** | <https://dotnet.microsoft.com/download/dotnet/8.0> → *SDK* → Windows x64 | `winget install --id Microsoft.DotNet.SDK.8 -e --source winget` |
 | **Git para Windows** | Descargar (`git clone`) y subir (`git push`) el repositorio | **Sí** (para trabajar con GitHub) | <https://git-scm.com/download/win> | `winget install --id Git.Git -e --source winget` |
 | GitHub CLI | Iniciar sesión en GitHub desde la terminal (`gh auth login`) | Opcional | <https://cli.github.com> | `winget install --id GitHub.cli -e --source winget` |
 | Visual Studio 2022 o posterior (Community es gratis) con la carga de trabajo *Desarrollo de escritorio de .NET*, o VS Code / Rider | Editar y depurar el código. Abra `codigo\CadMepRevit.sln` | Opcional | <https://visualstudio.microsoft.com/es/downloads/> | `winget install --id Microsoft.VisualStudio.2022.Community -e --source winget` |
@@ -21,7 +22,7 @@ Notas:
 - Compruebe la instalación:
 
   ```powershell
-  dotnet --list-sdks     # debe aparecer una versión 10.x
+  dotnet --list-sdks     # deben aparecer una versión 10.x y una 8.x
   git --version
   ```
 
@@ -60,7 +61,7 @@ Elija una de estas opciones (por orden de preferencia):
 
 ## 4.3 Crear el instalador paso a paso
 
-1. Instale el **SDK de .NET 10** ([4.1](#41-herramientas-que-hay-que-descargar)).
+1. Instale los **SDK de .NET 10 y 8** ([4.1](#41-herramientas-que-hay-que-descargar)).
 2. Ponga las **12 familias** en `codigo\familias_uniones\` ([4.2](#42-conseguir-las-12-familias-de-uniones)).
 3. Abra la carpeta `codigo` en el Explorador y haga **doble clic en `CREAR_INSTALADOR.cmd`**. O, desde PowerShell:
 
@@ -114,7 +115,8 @@ Sí: puede descargar el proyecto completo desde GitHub y seguir trabajando. Todo
 ```powershell
 # 1. Herramientas (vea 4.1)
 winget install --id Git.Git -e --source winget
-winget install --id Microsoft.DotNet.SDK.10 -e --source winget
+winget install --id Microsoft.DotNet.SDK.10 -e --source winget   # Revit 2027, instalador y versiones 2023/2024
+winget install --id Microsoft.DotNet.SDK.8 -e --source winget    # Revit 2025/2026 (versiones anteriores a 2027) y pruebas
 winget install --id GitHub.cli -e --source winget      # opcional
 git config --global core.longpaths true                # evita problemas con rutas largas de Windows
 

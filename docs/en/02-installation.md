@@ -4,7 +4,7 @@
 
 ## 2.1 Installing with `Instalar_RevitAutomation.exe`
 
-The installer is **not** stored in the repository: generate it with `codigo\CREAR_INSTALADOR.cmd` (step by step in [Development § 4.3](04-development.md#43-creating-the-installer-step-by-step); it needs the .NET 10 SDK and the 12 fitting families). It is written next to the `codigo` folder.
+The installer is **not** stored in the repository: generate it with `codigo\CREAR_INSTALADOR.cmd` (step by step in [Development § 4.3](04-development.md#43-creating-the-installer-step-by-step); it needs the .NET 10 and .NET 8 SDKs and the 12 fitting families). It is written next to the `codigo` folder.
 
 1. Close Revit.
 2. Double-click `Instalar_RevitAutomation.exe`.
