@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pure RITE rules, classification, planning, persistence and reporting checks; no Revit dependencies. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../src/RevitAutomation/Commands/Aislamiento/AislamientoContracts.cs" Link="AislamientoContracts.cs" />
+    <Compile Include="../../../src/RevitAutomation/Commands/Aislamiento/AislamientoRules.cs" Link="AislamientoRules.cs" />
+    <Compile Include="../../../src/RevitAutomation/Commands/Aislamiento/AislamientoClassifier.cs" Link="AislamientoClassifier.cs" />
+    <Compile Include="../../../src/RevitAutomation/Commands/Aislamiento/AislamientoPlanner.cs" Link="AislamientoPlanner.cs" />
+    <Compile Include="../../../src/RevitAutomation/Commands/Aislamiento/AislamientoSettingsStore.cs" Link="AislamientoSettingsStore.cs" />
+    <Compile Include="../../../src/RevitAutomation/Commands/Aislamiento/AislamientoReport.cs" Link="AislamientoReport.cs" />
+  </ItemGroup>
+</Project>

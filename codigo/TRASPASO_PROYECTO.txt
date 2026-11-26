@@ -1,0 +1,254 @@
+﻿CAD MEP PARA REVIT 2025 Y 2027 · DOCUMENTO DE TRASPASO DEL PROYECTO
+=============================================================
+Fecha: 12-11-2026
+Actualización: 19-11-2026
+Carpeta: <carpeta del proyecto>
+(Es un proyecto independiente: no comparte código con otros complementos ni los modifica.)
+
+ESTADO DE LA VERSIÓN COMBINADA (19-11-2026)
+-------------------------------------------
+Cinco botones en la cinta. Las medidas del plano se aplican al modelar, incluido el DWF
+opcional para Tuberías, Conductos y Bandejas. Tuberías también calcula pendientes y bajantes.
+Tuberías crea codos, tes y reducciones y conserva la pendiente al recortar. Conductos y
+bandejas crean también cruces. El técnico resuelve los encuentros de cuatro tubos y los de
+tubos eléctricos. Conductos coloca terminales, compuertas y equipos de aire junto a su red.
+Los bloques de cuadros siguen en Equipos y PCI.
+CadRegistration y CadPlacement encajan el CAD con líneas, círculos e inserciones de bloques.
+Véase LEEME_VERSION_COMBINADA.txt y Pruebas\RESULTADO_CODOS_TES_ACCESORIOS_2026-11-19.txt.
+Los apartados siguientes documentan la versión inicial del 12-11.
+
+1. LA IDEA
+----------
+Es un complemento (add-in) de Revit 2025 que convierte un plano CAD (DWG o DXF) en un
+modelo BIM. A partir de las líneas y bloques del plano crea:
+
+  - tuberías (fontanería, saneamiento, calefacción, PCI…);
+  - conductos (climatización, ventilación, extracción);
+  - bandejas de cables y tubos eléctricos;
+  - muros de arquitectura;
+  - uniones: codos, tes, cruces y transiciones;
+  - familias de Revit o "marcadores 3D" en el sitio de cada bloque (equipos, rejillas,
+    aparatos sanitarios, tomas eléctricas…);
+  - conexiones automáticas entre los tramos y los conectores de las familias colocadas.
+
+Está pensado para usuarios SIN experiencia, en 3 pasos guiados:
+  1. Elegir el archivo DWG o DXF.
+  2. Ventana de mapeo: para cada capa, qué es; para cada bloque, qué familia usar.
+  3. Previsualización: el usuario la revisa y confirma.
+
+Todo se hace en UNA transacción ("CAD MEP: construir desde CAD") que se deshace con
+Ctrl+Z. Nada se crea sin confirmación.
+
+Reglas que se han seguido (y hay que mantener):
+  - No inventar clases, métodos ni parámetros de la API de Revit.
+    Todo se comprueba compilando contra las DLL reales de
+    C:\Program Files\Autodesk\Revit 2025. Si algo no compila, NO existe.
+    Truco para buscar un nombre en la DLL desde PowerShell:
+      $b=[IO.File]::ReadAllBytes("C:\Program Files\Autodesk\Revit 2025\RevitAPI.dll")
+      [regex]::Matches([Text.Encoding]::ASCII.GetString($b),'Connect[A-Za-z]*Terminal[A-Za-z]*')
+  - No inventar medidas. Lo que el plano en planta no dice se toma de un sitio claro
+    o se marca como valor SUPUESTO (celda amarilla) para que el usuario lo revise:
+      · el alto de un conducto rectangular;
+      · el alto de un equipo.
+  - Mensajes en español, que digan qué falló y CÓMO corregirlo.
+  - Distinguir siempre lo probado automáticamente de lo verificado dentro de Revit.
+
+
+2. ESTADO ACTUAL (LEER ANTES DE TOCAR NADA)
+-------------------------------------------
+Compila con 0 avisos y 0 errores contra la API real de Revit 2025.
+Todas las pruebas automáticas fuera de Revit pasan.
+
+Verificado DENTRO de Revit por el usuario (con una versión anterior):
+  - El complemento carga y aparece la pestaña "CAD MEP".
+  - Con el plano de clima se crearon los conductos.
+  - FALLARON el codo y la te. Causa más probable: el tipo de conducto del proyecto no
+    tiene familias de unión en "Preferencias de enrutamiento". No está confirmado.
+    Después se añadió:
+      · aviso previo (celda naranja);
+      · elección automática de un tipo completo;
+      · reintento de la unión con los conectores en otro orden;
+      · informe guardado en %LOCALAPPDATA%\CadMepRevit\ultimo_informe.txt.
+    LO PRIMERO es repetir esa prueba y leer ese informe.
+
+NO verificado todavía dentro de Revit (solo compila):
+  - muros (Wall.Create, tipo por espesor);
+  - marcadores 3D (DirectShape);
+  - colocación de familias desde bloques;
+  - conexiones automáticas (Connector.ConnectTo, MechanicalUtils.ConnectAirTerminalOnDuct);
+  - transiciones (NewTransitionFitting);
+  - cambio de ancho y alto en rectangulares.
+
+La última versión está COMPILADA pero puede no estar INSTALADA: Revit estaba abierto.
+Para instalarla: cerrar Revit 2025 y ejecutar instalar.cmd.
+
+
+3. CÓMO COMPILAR, PROBAR E INSTALAR
+-----------------------------------
+Requisitos:
+  - .NET 8 SDK;
+  - Revit 2025 instalado. Si no está, el proyecto usa los paquetes NuGet
+    Nice3point.Revit.Api 2025.4.60.
+
+  Compilar:     dotnet build CadMepRevit.sln -c Release
+  Pruebas:      dotnet run --project tests/CadMepRevit.Tests -c Release -- ejemplos
+                (generan ejemplos\ejemplo_mep.dwg/.dxf y prueban con los planos reales
+                 si existen en este equipo; NO usan Revit)
+  Instalar:     instalar.cmd       (Revit cerrado; pasa las pruebas, compila y copia a
+                                    %APPDATA%\Autodesk\Revit\Addins\2025\CadMepRevit\ + .addin)
+  Desinstalar:  desinstalar.cmd
+
+Notas:
+  - SourceLink está desactivado en Directory.Build.props porque la carpeta estaba en una unidad de red.
+  - El csproj comprueba que la RevitAPI referenciada es la 25.x.
+  - ACadSharp está fijado en 3.8.35, la misma versión que usa otro complemento.
+    Si se cambia, pueden chocar dentro de Revit al cargar dos versiones de la misma DLL.
+
+
+4. ESTRUCTURA DEL CÓDIGO
+------------------------
+src\CadMepRevit.Core   (net8.0, SIN Revit: todo lo que se puede probar fuera)
+  CadReader.cs        Lee el DWG/DXF con ACadSharp (solo espacio modelo) y convierte en
+                      tramos rectos:
+                        - LINE, LWPOLYLINE, POLYLINE;
+                        - ARC, en cuerdas de 90° como máximo;
+                        - las curvas de polilínea, en su cuerda.
+                      Guarda los bloques (INSERT) con su huella real. Avisa de las XREF
+                      sin cargar. Convierte OCS→WCS, necesario para entidades reflejadas.
+  Ocs.cs              Algoritmo del eje arbitrario (OCS → WCS).
+  CadModel.cs         P3, unidades, CadSegment (con WidthMm opcional), CadBlockRef, CadDrawing.
+  LayerMapping.cs     MepKind (Tubería, Conducto, Bandeja, TuboElectrico, Muro) y la
+                      sugerencia por nombre de capa. Primero descarta textos y cotas;
+                      la fontanería va antes que palabras ambiguas como "RETORNO".
+  NetworkBuilder.cs   Prepara los tramos de una capa:
+                        - limpia cortos y duplicados;
+                        - parte en las tes;
+                        - une colineales, salvo que cambie el ancho;
+                        - clasifica las uniones: codo, te, cruz, transición o no admitida.
+                      Usa una rejilla espacial; 3000 tramos se procesan en menos de 0,1 s.
+  OutlineDetector.cs  "Doble línea" (contornos), para conductos, bandejas y muros:
+                        - une líneas colineales y quita las testas de los rectángulos;
+                        - empareja paralelas por paridad en cada intervalo → eje + ancho;
+                        - resuelve los rectángulos ambiguos según sus vecinos;
+                        - cierra los huecos de piezas especiales: codo/te por intersección,
+                          transición alineada, ramal que acaba en la cara de otro más ancho;
+                        - en muros, descarta los pilares (rectángulos casi cuadrados).
+  BlockInfo.cs        Footprint: rectángulo orientado mínimo de la geometría real del bloque.
+                      BlockNames:
+                        - nombres exportados de Revit ("Familia - Tipo-123-CLI - Vista");
+                        - función del bloque por nombre o capa: equipo, terminal, eléctrico,
+                          sanitario, pieza de unión, conector…;
+                        - medida escrita en el nombre ("600x100").
+
+src\CadMepRevit   (net8.0-windows, WinForms, add-in de Revit)
+  App.cs                    Cinta "CAD MEP" con 3 botones; iconos generados en código.
+  Commands\ImportCadCommand Flujo completo:
+                              comprobaciones → leer → mapeo → previsualizar → confirmar
+                              → construir → informe.
+                            También guarda ultimo_informe.txt.
+  Commands\HelpCommand      Ayuda; disponibilidad de los botones.
+  Revit\RevitCatalog.cs     Lee del proyecto (solo lectura):
+                              - niveles;
+                              - tipos (tubería, conducto, bandeja, tubo, muro básico + espesor);
+                              - sistemas;
+                              - familias colocables y su familia/tipo para buscar por nombre;
+                              - uniones que faltan en las preferencias de enrutamiento.
+  Revit\MepBuilder.cs       Construcción en una sola transacción:
+                              1) tramos y muros;
+                              2) tamaños (una sola regeneración);
+                              3) uniones: SubTransaction por unión, con reintento;
+                              4) bloques: familia o DirectShape;
+                              5) conexiones automáticas.
+                            WarningDismisser cierra los avisos de Revit y los cuenta.
+  Ui\ImportForm.cs          Paso 2:
+                              - ajustes generales;
+                              - tabla de capas: tipo, sistema, tamaño, alto, doble línea;
+                              - tabla de bloques: familia, marcador o nada, categoría,
+                                alto y altura;
+                              - validación que señala la celda del problema.
+  Ui\PreviewForm.cs         Paso 3: dibujo con zoom; bandas de ancho; huellas de bloques;
+                            resumen y avisos.
+  Ui\Messages.cs, HelpText.cs
+
+tests\CadMepRevit.Tests   Pruebas de consola del núcleo. Usan los planos reales si existen.
+docs\Guia_CadMepRevit.txt Guía para el usuario final (se instala con el complemento).
+ejemplos\                 Plano de ejemplo generado por las pruebas.
+
+
+5. PLANOS DE PRUEBA REALES (en este equipo)
+-------------------------------------------
+- planos_reales\clima_vivienda.dwg
+    Exportado desde Revit. Contiene:
+      · conductos a doble línea → 4 conductos 600/400 con 1 te y 1 codo;
+      · fancoil, 4 rejillas, termostato y conectores.
+    Las rejillas tienen un punto de inserción falso, y por eso se usa su huella.
+- planos_reales\varios\
+    FON_A, SAN_A, ELE_A, ELE_B, ELE_C, CLI_A, CLI_B, CLI_C, VEN_A, PCI_A, PCI_B y TEL_A/B.
+    Su arquitectura es una XREF sin cargar (la distribución de arquitectura).
+    TEL_A no se puede leer por un fallo de ACadSharp ("Vertex2D a Vertex3D").
+- <carpeta de planos reales>\planos_reales\plano de muros.dwg
+    Muros a doble línea en la capa 0. La cabecera dice mm, pero está dibujado en METROS:
+    unos 1400 muros de 100, 150 y 70 mm.
+- <carpeta de planos reales>\cads\
+    Planos de electricidad, iluminación, PCI y baños: sin probar todavía.
+
+
+6. PROBLEMAS CONOCIDOS Y LÍMITES
+--------------------------------
+- Solo se lee el espacio modelo. Las polilíneas curvas y los arcos se aproximan por cuerdas.
+- Las uniones dependen de las preferencias de enrutamiento del tipo. Revit puede rechazar
+  tramos más cortos que la pieza.
+- Una transición descentrada (los ejes ni se cortan ni están alineados) queda sin unir.
+- Los marcadores 3D (DirectShape) no tienen conectores: no se conectan ni forman sistemas.
+- Las familias basadas en cara o anfitrión no se colocan. Se crea un marcador en su lugar
+  y el informe lo dice.
+- No se crean:
+    · puertas, ventanas ni suelos;
+    · circuitos eléctricos (cableado a cuadros);
+    · pendientes de saneamiento.
+- Alturas: el plano en planta no las da. Se usan:
+    · la "Altura sobre el nivel" (ejes MEP);
+    · el alto por capa;
+    · el alto por bloque (supuesto, en amarillo).
+- La ubicación del muro se asume en su eje (Wall.Create). No está verificado en Revit
+  qué "línea de ubicación" usa por defecto.
+- La conexión automática solo mueve un extremo si el giro es menor de 10° y la distancia
+  menor de 500 mm. Si no puede, deja nota en el informe.
+- Si las unidades parecen erróneas, la ventana solo avisa; no cambia nada sola.
+
+
+7. SIGUIENTES PASOS RECOMENDADOS (por prioridad)
+------------------------------------------------
+1. Probar DENTRO de Revit 2025 con un proyecto de plantilla "Sistemas":
+     a) el plano de clima (conductos + uniones + marcadores);
+     b) FON_A o SAN_A (tuberías con sistemas);
+     c) ELE_A (tomas como aparato eléctrico + tubos);
+     d) plano de muros en METROS (muros).
+   Revisar en cada caso %LOCALAPPDATA%\CadMepRevit\ultimo_informe.txt y corregir.
+2. Importar varios planos a la vez (arquitectura + instalaciones) o resolver las XREF
+   leyendo el archivo de arquitectura que indica la referencia.
+3. Conectar tramos a equipos cuando el conector está desviado (crear un tramo corto
+   o un codo en vez de rechazar).
+4. Pendientes en saneamiento (RBS_PIPE_SLOPE) y sistemas de ventilación.
+5. Electricidad: crear circuitos (ElectricalSystem) desde las tomas hacia un cuadro
+   elegido. Verificar la API antes de usarla.
+6. Puertas y ventanas en los huecos de los muros, usando bloques de puerta si los hay.
+7. Elegir altura por capa o bloque desde textos del plano ("h=2,70", "DN25"…).
+8. Guardar y cargar el mapeo de capas (JSON) para no repetirlo en planos de la misma
+   oficina.
+
+
+8. CONSEJOS PARA QUIEN SIGA
+---------------------------
+- Hacer cambios pequeños. Después de cada cambio: compilar la solución, pasar las
+  pruebas y, si se toca la lógica geométrica, añadir una prueba con un caso sintético
+  y, si hay, con un plano real.
+- La geometría se depura bien sin Revit. En la sesión de desarrollo se usó un programa
+  de consola que dibuja el plano y los ejes en SVG y lo pasa a PNG con Edge sin ventana
+  (msedge --headless --screenshot).
+- ACadSharp y unidades de red: si la compilación tarda o falla con SourceLink, revisar
+  Directory.Build.props.
+- WinForms y Revit tienen tipos con el mismo nombre (Form, Control, ComboBox, TextBox,
+  TaskDialog). Usar alias (using Form = System.Windows.Forms.Form;).
+- Las pruebas de la API de Revit solo son válidas DENTRO de Revit. No dar por buena una
+  función porque compile.

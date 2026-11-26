@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pure planning, geometry, persistence and reporting checks; no Revit dependencies. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../src/RevitAutomation/Commands/Patinillo/PatinilloContracts.cs" Link="PatinilloContracts.cs" />
+    <Compile Include="../../../src/RevitAutomation/Commands/Patinillo/PatinilloPlanner.cs" Link="PatinilloPlanner.cs" />
+    <Compile Include="../../../src/RevitAutomation/Commands/Patinillo/PatinilloGeometry.cs" Link="PatinilloGeometry.cs" />
+    <Compile Include="../../../src/RevitAutomation/Commands/Patinillo/PatinilloSettingsStore.cs" Link="PatinilloSettingsStore.cs" />
+    <Compile Include="../../../src/RevitAutomation/Commands/Patinillo/PatinilloReport.cs" Link="PatinilloReport.cs" />
+  </ItemGroup>
+</Project>

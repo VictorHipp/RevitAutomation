@@ -1,0 +1,134 @@
+﻿CAD-REV (PESTAÑA REVITAUTOMATION) PARA REVIT 2023, 2024, 2025, 2026 Y 2027 · GUÍA RÁPIDA
+============================================
+
+QUÉ HACE
+Convierte un plano DWG o DXF en un modelo de Revit. En la pestaña "RevitAutomation", el desplegable "CAD-REV" tiene un botón
+por instalación; ninguno pide medidas ni ajustes:
+
+  1. TUBERÍAS             → codos, tes y reducciones, además de tuberías, bajantes,
+                            aparatos sanitarios, válvulas, grifos y equipos de agua.
+  2. CONDUCTOS            → conductos con codos, tes, cruces y reducciones. Coloca
+                            rejillas, difusores, compuertas y ventiladores.
+  3. BANDEJAS             → bandejas de cables con codos, tes, cruces y reducciones.
+                            Los tubos eléctricos quedan como tramos rectos.
+  4. LUMINARIAS           → luminarias (downlights, puntos de luz, tiras LED, emergencias),
+                            interruptores y detectores de presencia.
+  5. EQUIPOS Y PCI        → extintores, BIE, detectores, pulsadores, sirenas, señales,
+                            cuadros, tomas y otros dispositivos eléctricos.
+
+Cada botón lee el plano entero pero modela SOLO lo suyo. Puede pulsar varios con el mismo
+plano (o cada uno con su plano): lo que otro botón ya colocó en el mismo sitio no se repite.
+
+ANTES DE EMPEZAR
+• Use un PROYECTO de Revit creado con la plantilla "Sistemas" (o "Mecánica"): trae tipos
+  de tubería, conducto, bandeja y tubo, y sus sistemas. Con "Arquitectura" no hay tipos MEP.
+• En el CAD, cada red en su propia capa (AF, ACS, SANEAMIENTO, P-PIPE, M-HVAC-DUCT,
+  E-POWR-CNDT…), dibujada con LÍNEA o POLILÍNEA en el espacio modelo.
+
+DÓNDE SE COLOCA
+• Si el MISMO DWG está vinculado o importado en el proyecto (Insertar > Vincular CAD), todo se coloca encima de él,
+  aunque lo haya movido o girado. Es lo recomendado: así queda alineado con la arquitectura.
+• Si el plano falta en el proyecto, el complemento intenta vincularlo. La línea «Posición» del informe
+  indica cuántos puntos de líneas, círculos e inserciones de bloque coinciden con el CAD.
+• Lo que no quede en su sitio se sustituye por un marcador 3D en el punto correcto y el informe lo dice.
+
+PLANOS NUEVOS: «¿QUÉ ES ESTO?»
+Si el plano tiene capas o bloques con nombres que el programa no reconoce, aparece una ventana para decir qué es cada
+uno (tubería, conducto, luminaria, extintor…). Se recuerda para los siguientes planos de la oficina en
+%APPDATA%\CadMepRevit\reglas_reconocimiento.json (se puede borrar para volver a empezar).
+
+CÓMO SE USA (botones 1 a 5)
+1. Pulse el botón de la instalación.
+2. Elija el archivo .dwg o .dxf.
+3. Solo en Tuberías, Conductos y Bandejas: puede elegir también el DWF del MISMO plano
+   (opcional; pulse Cancelar si no lo tiene). Sus textos se suman a los del DWG, sin
+   duplicar, para leer las medidas escritas. Si el DWF no coincide con el DWG (otro plano
+   u otra revisión), no se usa y el informe lo dice. Solo DWF del espacio modelo (no DWFx).
+4. Si el proyecto tiene varios niveles, elija la PLANTA. Es la única pregunta.
+5. Al terminar verá un informe y los elementos creados quedan seleccionados.
+   Ctrl+Z lo deshace entero.
+
+ALTURAS
+• Tuberías: se leen las pendientes del plano y las cotas escritas, relativas al nivel elegido.
+  Las cotas C.I., solera, fondo o generatriz inferior se convierten a cota de eje con el radio exterior.
+  Sin cota escrita, el punto más alto queda a 2500 mm en red colgada o -600 mm en enterrada: SUPUESTO, revisar.
+  Un plano identificado como colgado no se considera enterrado por mencionar conexiones con otra red enterrada.
+• Conductos, bandejas y tubos eléctricos: eje a 2500 mm sobre el nivel.
+• Rejillas, equipos y accesorios se sitúan a la cota del eje de su red. En tubos inclinados
+  se usa la cota en el punto de inserción.
+• El plano en planta no dice la altura del resto: se usan valores habituales SUPUESTOS,
+  que el informe señala para revisar: luminarias 2700 mm (apliques y emergencias 2200),
+  interruptores 1100, detectores de presencia 2700, tomas 300, cuadros 1500, extintores
+  1000, BIE 1500, pulsadores 1200, sirenas 2300, señales 2100, detectores de incendio 2700.
+
+TUBERÍAS, CONDUCTOS Y BANDEJAS
+• Dibuje la pendiente con texto (2 %, i=1,5 %, 2 ‰…) y una flecha hacia donde baja el agua.
+  Se reconocen flechas de líneas, triángulos, rellenos, polilíneas de ancho variable, directrices y bloques.
+• Una etiqueta vale para todo el recorrido hasta la siguiente te o cruz. Sin etiqueta válida, queda horizontal.
+  Un voto aislado contrario se descarta si hay mayoría. Si hay empate, varios votos contrarios o una red que
+  no cierra en altura, se deja horizontal y el informe indica qué revisar y dónde.
+• Los cuatro tubos que llegan a un mismo punto conservan sus extremos coincidentes. El técnico
+  resuelve esos encuentros. Si una pieza cambia una pendiente, se deshace y se anota el motivo.
+• El límite de cierre de huecos depende del diámetro o ancho. El informe indica el avance y los
+  huecos que quedan abiertos. Los conductos y las bandejas aplican la misma regla de ancho.
+• Las medidas DIMENSION y los rótulos Ø/DN se aplican al modelar. El informe indica si Revit eligió otro diámetro disponible.
+• Revise la sección PENDIENTES de %LOCALAPPDATA%\CadMepRevit\ultimo_informe.txt: referencias SUPUESTAS,
+  alturas de cada red, etiquetas descartadas y conflictos con sus coordenadas.
+• En DIAGNÓSTICO, las líneas «Unión», «Pendiente antes y después» y «Accesorio» muestran
+  la creación de piezas, la conservación de la pendiente y la conexión de las familias.
+
+FAMILIAS DE LOS BLOQUES
+• Si el proyecto o la biblioteca tienen la familia con el nombre del bloque, se usa esa
+  (los planos exportados de Revit se llaman "Familia - Tipo-…").
+• Si no, se carga una GENÉRICA de la biblioteca de Revit de su clase: rejilla o difusor,
+  luminaria ("M_Foco empotrado - Foco", "M_Luminarias de tira"…), interruptor, toma,
+  cuadro, extintor ("Extintor C02"), BIE, detector ("M_Detector de humos"), pulsador,
+  sirena, señal… Se prefieren las que no necesitan muro ni techo; las de techo
+  "basadas en cara" se apoyan en un plano horizontal "CAD-REV · techo …".
+• Si no hay ninguna, queda un marcador 3D con la huella del CAD (sin conectores).
+• Revit crea las piezas de unión a partir de los tramos. Se excluyen los codos y tes dibujados como bloque, leyendas,
+  flechas, símbolos de capas de anotación y bloques enormes que son dibujos enteros.
+• Bibliotecas: %APPDATA%\CadMepRevit\bibliotecas.txt (una carpeta por línea).
+
+MEDIDAS Y ENCUENTROS
+• Tuberías, Conductos y Bandejas aplican al modelar las cotas DIMENSION y los rótulos de
+  tamaño asociados que se leen del DWG y del DWF opcional.
+• El técnico resuelve los encuentros de tuberías, conductos y tubos eléctricos. El informe
+  detalla las uniones que Revit intenta crear en las bandejas de cables.
+
+EL INFORME (después de cada botón)
+Se muestra al terminar y se guarda como %LOCALAPPDATA%\CadMepRevit\ultimo_informe.txt,
+con una copia con fecha en la carpeta "informes":
+  1. Elementos modelados, por sistema, con su familia y tipo.
+  2. Elementos no modelados, con el motivo (incluido "lo modela el botón …").
+  3. Avisos: uniones fallidas, medidas no aplicadas, DWF no usado…
+  4. Decisiones por defecto y valores SUPUESTOS.
+  5. Cuadre: entidades del plano = modeladas + no modeladas.
+  PENDIENTES (Tuberías): etiquetas, referencias, cotas de cada red y avisos con coordenadas.
+
+CAPAS: QUÉ SE CONSTRUYE CON CADA UNA (por su nombre)
+• AF/ACS/RACS/SANEAMIENTO/PLUVIALES/FONTANERÍA/PCI/P-PIPE → tubería (botón Tuberías).
+• CONDUCTO/CLIMA/IMPULSIÓN/RETORNO/EXTRACCIÓN/VENTILACIÓN/M-HVAC-DUCT → conducto.
+• BANDEJA/TRAY/E-CABL-TRAY → bandeja; CONDUIT/CORRUGADO/E-POWR-CNDT/FUERZA → tubo eléctrico.
+• Cuadros eléctricos, paneles, CGP y capas AIA como E-POWR-PANL se excluyen de los tramos.
+  Los bloques de cuadros los coloca Equipos y PCI.
+• Rótulos y anotaciones (-IDEN, -ANNO, -NOTE, TEXTOS, COTAS…), subidas (-RISE) y radios de
+  cobertura → no se construyen.
+• Una capa llamada "0" o con un nombre que no dice lo que es no se construye: renómbrela.
+• Doble línea (contorno, como exporta Revit): se detecta sola y se modela un solo tramo
+  por el eje con el ancho (o diámetro) dibujado. El alto de conductos rectangulares y
+  bandejas no está en planta: se usa un valor SUPUESTO que el informe señala.
+
+PROBLEMAS FRECUENTES
+• "En este plano no hay nada que modele el botón …": ese plano es de otra instalación;
+  el detalle dice qué botón modela cada capa y cada bloque.
+• "El proyecto no tiene tipos de …": use la plantilla "Sistemas" o
+  Gestionar > Transferir normas de proyecto.
+• Uniones que fallan: el informe dice qué familia de unión le falta al tipo.
+• Todo sale diminuto o enorme: corrija las unidades del archivo (UNIDADES / INSUNITS).
+• No aparece la pestaña "RevitAutomation": cierre Revit, ejecute Instalar_RevitAutomation.exe y, al abrir Revit, elija "Cargar siempre".
+
+PLANO DE EJEMPLO
+La carpeta Ejemplos de la instalación contiene ejemplo_mep.dwg y ejemplo_mep.dxf, en
+milímetros, con las capas M-TUBERIA-AF, M-TUBERIA-ACS, M-CONDUCTO-IMP, E-BANDEJA,
+M-CONDUCTO-RET (doble línea), M-VALVULAS (2 bloques) y COTAS.

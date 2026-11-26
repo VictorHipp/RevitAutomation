@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pruebas automáticas FUERA de Revit (no prueban la API de Revit). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CadMepRevit.Core\CadMepRevit.Core.csproj" />
+    <None Include="..\..\samples\bandejas_uniones.dxf" Link="samples\bandejas_uniones.dxf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\samples\*_uniones_accesorios.dxf" Link="samples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,17 @@
+# Normaliza los finales de línea del texto; los binarios y los DXF de prueba se guardan tal cual.
+# Normalise text line endings; binaries and test DXF files are stored byte for byte.
+* text=auto
+
+# Los .cmd se ejecutan con cmd.exe: siempre CRLF / .cmd files run under cmd.exe: always CRLF
+*.cmd text eol=crlf
+
+# Fixtures CAD: las pruebas los leen byte a byte / CAD fixtures: tests read them byte for byte
+*.dxf -text
+*.dwg binary
+*.dwf binary
+*.rfa binary
+*.rvt binary
+*.exe binary
+*.zip binary
+*.png binary
+*.ico binary

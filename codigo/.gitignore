@@ -1,0 +1,12 @@
+bin/
+obj/
+.vs/
+*.user
+# El DWG de ejemplo lo generan las pruebas y sale distinto en cada ejecución (el escritor de DWG
+# no es determinista). El DXF sí es estable y se guarda.
+ejemplos/ejemplo_mep.dwg
+# Informes generados a partir de planos reales de proyectos: no se publican.
+ejemplos/resultados_pendientes/
+Pruebas/
+# El instalador generado se publica como «release», no en el código.
+*.exe

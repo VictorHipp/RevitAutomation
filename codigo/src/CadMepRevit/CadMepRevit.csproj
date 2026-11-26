@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Motor CAD-REV (del plano CAD a Revit) para Revit 2023 a 2027: versiones y API en ..\Revit.props.
+       La pestaña la crea RevitAutomation (src\RevitAutomation), que carga este DLL. -->
+  <Import Project="..\Revit.props" />
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>CadMepRevit</RootNamespace>
+    <AssemblyName>CadMepRevit</AssemblyName>
+    <PlatformTarget>x64</PlatformTarget>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <GenerateDependencyFile>true</GenerateDependencyFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Evita ambigüedades (TaskDialog, Color...) entre WinForms/Drawing y la API de Revit. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CadMepRevit.Core\CadMepRevit.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="RevitAutomation" />
+  </ItemGroup>
+</Project>

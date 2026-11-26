@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pruebas de la lógica pura de REGION (detección de contornos cerrados, encadenado, duplicados y nombres).
+       Fuera de Revit: no prueban la lectura del CAD vinculado ni la creación de regiones rellenadas. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../src/RevitAutomation/Commands/Regiones/RegionModel.cs" Link="RegionModel.cs" />
+  </ItemGroup>
+</Project>

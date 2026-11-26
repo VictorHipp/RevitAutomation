@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><RollForward>Major</RollForward></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../src/CadMepRevit.Core/CadMepRevit.Core.csproj" /></ItemGroup>
+  <ItemGroup><Compile Include="../CadMepRevit.Tests/SlopeTests.cs" Link="SlopeTests.cs" /><Compile Include="../CadMepRevit.Tests/PipeFeatureTests.cs" Link="PipeFeatureTests.cs" /></ItemGroup>
+</Project>

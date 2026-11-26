@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Instalador de RevitAutomation para Revit 2023, 2024, 2025, 2026 y 2027 (Instalar_RevitAutomation.exe).
+       Usa .NET Framework 4.8, que ya trae Windows 10 y 11: no hace falta instalar nada más para ejecutarlo.
+       Lleva dentro el complemento compilado (obj\paquete.zip). No se compila a mano: use CREAR_INSTALADOR.cmd. -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>Instalar_RevitAutomation</AssemblyName>
+    <RootNamespace>InstaladorCadMep</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyTitle>Instalador de RevitAutomation para Revit</AssemblyTitle>
+    <Description>Instala RevitAutomation para Revit 2023, 2024, 2025, 2026 y 2027 en el usuario actual.</Description>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="obj\paquete.zip" LogicalName="paquete.zip" Condition="Exists('obj\paquete.zip')" />
+  </ItemGroup>
+
+  <Target Name="ComprobarPaquete" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('obj\paquete.zip')"
+           Text="Falta instalador\obj\paquete.zip con el complemento compilado. Genere el instalador con CREAR_INSTALADOR.cmd (en la carpeta del código), no compilando este proyecto por separado." />
+  </Target>
+</Project>

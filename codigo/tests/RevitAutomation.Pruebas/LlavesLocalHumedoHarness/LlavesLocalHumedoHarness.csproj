@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries><EnableSourceLink>false</EnableSourceLink>
+  </PropertyGroup>
+  <ItemGroup><Compile Include="../../../src/RevitAutomation/Commands/LlavesLocalHumedo/LlavesAlignment.cs" /></ItemGroup>
+</Project>

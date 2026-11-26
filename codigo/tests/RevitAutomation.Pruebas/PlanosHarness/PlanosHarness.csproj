@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pruebas de la lógica pura del módulo PLANOS (clasificación, niveles, escalas, división, numeración, reparto en láminas y etiquetas).
+       Fuera de Revit: no prueban la API de Revit ni la creación de vistas ni láminas. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../src/RevitAutomation/Commands/Planos/PlanosModel.cs" Link="PlanosModel.cs" />
+  </ItemGroup>
+</Project>

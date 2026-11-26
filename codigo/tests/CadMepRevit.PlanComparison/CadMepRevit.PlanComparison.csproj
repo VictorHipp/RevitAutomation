@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <DefineConstants Condition="'$(CurrentFittings)' == 'true'">$(DefineConstants);CURRENT_FITTINGS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ACadSharp" Version="3.8.35" />
+    <Compile Include="$(ComparisonSource)\src\CadMepRevit.Core\*.cs" Link="Core\%(Filename)%(Extension)" />
+    <Compile Include="$(ComparisonSource)\src\CadMepRevit\Revit\AutoPlanner.cs" Link="AutoPlanner.cs" />
+    <Compile Include="obj\ComparisonPlan.cs;obj\ComparisonImportForm.cs" />
+  </ItemGroup>
+</Project>

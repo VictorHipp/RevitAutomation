@@ -1,0 +1,259 @@
+﻿CAD MEP para Revit · VERSIÓN COMBINADA (13-11-2026)
+====================================================
+
+ACTUALIZACIÓN 19-11-2026 · UNIONES, HUECOS Y ACCESORIOS
+----------------------------------------------------
+(Implementado por Codex, que se quedó sin créditos antes de cerrar; comparación final, informe y compilado los
+terminó Claude: Pruebas\RESULTADO_CODOS_TES_ACCESORIOS_2026-11-19.txt. NO probado dentro de Revit.)
+Tuberías crea codos, tes y reducciones. En los encuentros de cuatro tubos, deja los extremos
+coincidentes e indica el punto para que lo resuelva el técnico. Revit prueba cada pieza por
+separado y la deshace si cambia la pendiente de un tubo. Los cambios de medida por rótulo
+también pueden generar reducción. Conductos crea codos, tes, cruces y reducciones.
+Bandejas crea sus uniones habituales. Los tubos eléctricos quedan como tramos rectos.
+
+El cierre de esquinas, tes y huecos en línea se busca entre ejes de una misma capa. El límite
+es tres diámetros de tubería, entre 50 y 250 mm, o 1,5 anchos en conductos y bandejas, hasta
+1000 mm. Los cruces de ejes y las incompatibilidades de sistema y cota dejan el hueco abierto.
+
+Rejillas, difusores, compuertas y equipos de aire se colocan con Conductos. Los accesorios,
+terminales y equipos de red siguen la altura y el giro de su tramo. La inserción y la conexión
+se intentan por familia. El informe indica cuándo una familia queda colocada para conexión manual.
+
+Compilado para Revit 2025 y 2027. En Revit queda por comprobar la creación efectiva de las
+piezas, la pendiente tras recortar, la inserción en línea y la conexión de terminales.
+En %LOCALAPPDATA%\CadMepRevit\ultimo_informe.txt, revise «UNIONES», «Pendiente antes y después»,
+«Huecos cerrados» y «ACCESORIOS, TERMINALES Y EQUIPOS DE RED».
+Detalles en Pruebas\RESULTADO_CODOS_TES_ACCESORIOS_2026-11-19.txt.
+
+ACTUALIZACIÓN 19-11-2026 · POSICIÓN, BANDEJAS Y MEDIDAS AL MODELAR
+---------------------------------------------------------------
+El encaje del DWG sobre el CAD del proyecto usa también las inserciones de bloque. La línea
+«Posición» indica los puntos de líneas y círculos, los de inserción y cuántos coinciden. El giro
+y la posición del vínculo se aplican a las familias, los marcadores y los tramos.
+
+Bandejas crea uniones solo en las bandejas de cables. El técnico resuelve los encuentros de tubos
+eléctricos. El DXF samples\bandejas_uniones.dxf permite probar codos, te, cruz y reducción.
+Las capas de cuadros, paneles y CGP se excluyen de los tramos cuando identifican el equipo.
+Equipos y PCI sigue colocando los bloques de cuadros.
+
+La cinta tiene cinco botones. Las medidas de las cotas y los rótulos se aplican al modelar, con
+el DWF opcional en Tuberías, Conductos y Bandejas. Tuberías sigue aplicando las pendientes del plano.
+
+Compilado para Revit 2025 y 2027. Las pruebas y la comparación se realizaron fuera de Revit.
+Queda pendiente verificar sobre un CAD real vinculado la línea «Posición», comprobar las líneas
+«Unión … CREADA / NO creada» de bandeja y revisar la colocación de las familias genéricas en las
+líneas «Bloque … → familia» de %LOCALAPPDATA%\CadMepRevit\ultimo_informe.txt.
+Véase Pruebas\RESULTADO_POSICION_BANDEJAS_AJUSTAR_2026-11-19.txt.
+
+ACTUALIZACIÓN 18-11-2026 (16:45) · POSICIÓN SOBRE EL CAD EN TODOS LOS BOTONES
+-----------------------------------------------------------------------------
+Problema: con el CAD vinculado en el proyecto, Tuberías (y potencialmente cualquier botón) colocaba en el 0,0, es decir,
+en las coordenadas del DWG y no encima del CAD.
+Causa: CadPlacement situaba el CAD por su caja en Revit (get_BoundingBox(null)). Esa caja es null si el CAD se vinculó
+«solo en la vista actual» y sale inflada si hay textos, sombreados o restos lejanos. Al no encajar, se descartaba el CAD.
+Solución:
+- Core/CadRegistration.cs: encaje por puntos. Los extremos de las líneas RECTAS del plano y los centros de los círculos
+  se comparan con los vértices del CAD en Revit, con una tolerancia de 10 mm.
+  - Primero se prueba la transformación del propio CAD.
+  - Si no casa, se busca el desplazamiento con el giro y la escala del CAD, por semillas sobre vértices, puntos de
+    control, comprobación con 300 puntos y afinado.
+  - La escala se estima con contornos robustos (percentiles del 2 al 98 %), no con la caja.
+- Revit/CadPlacement.cs:
+  - la geometría se lee también con la vista dueña si el CAD es de una sola vista;
+  - si el plano no está en el proyecto, se prueban los demás CAD vinculados (exigiendo al menos el 40 % de los
+    puntos y 20 puntos).
+- ModelFromCadCommand:
+  - si el plano no está, se vincula: origen a origen; encima del CAD con el que coincide; o centro a centro si está a
+    más de 10 km;
+  - después se vuelve a situar sobre el vínculo.
+Pruebas: tests/PlacementTests.cs, sintéticas y con 4 planos reales vinculados centro a centro y girados 30°. Se
+  encuentra la posición a menos de 2 mm, en menos de 0,1 s. 406 pruebas superadas. Sin verificar aún dentro de Revit.
+
+ACTUALIZACIÓN 18-11-2026 (tarde) · LUMINARIAS DIBUJADAS CON LÍNEAS Y VÍNCULO DEL CAD
+-----------------------------------------------------------------------------------
+«Luminarias» reconoce las luminarias que el plano no dibuja como bloques (DIALux, Litestar…): en las capas de
+luminarias (Core/LooseFixtures.cs: «LUM», «LUMINARIAS», «LUMINAIRE», «LUCES», «EMERG…», o las que la oficina marque)
+agrupa el dibujo que se toca; cada grupo de 5 cm a 3 m es una luminaria (centro, giro del lado largo, medida). Tipo:
+rótulo de al lado (de la capa de rótulos que empieza igual que la de luminarias) → fila de la tabla de luminarias
+del plano → artículo → lineal / downlight / plafón / emergencia; sin tabla, una tabla con un solo artículo cerca, o la
+forma y el tamaño (mismo rótulo = mismo tipo). Se añaden al plano como bloques equivalentes (índice negativo) y siguen
+el camino de siempre: familia genérica de la biblioteca, cota del techo (emergencias en pared a 2,20 m), informe e
+inventario («Modelada: luminaria dibujada con líneas»). CadReader también mira dentro de los bloques de planta entera
+que tengan dibujo de luminarias; si hay varias plantas, se elige la del nivel por su nombre o se pregunta (Ui/ChoiceForm).
+Bloques «Emergencia…» o en capas de emergencias → luminaria (no pulsadores, duchas, puertas…).
+Posición (Revit/CadPlacement.cs): sin el DWG en el proyecto, se vincula en su sitio (origen a origen interno, unidades
+corregidas, vista de planta del nivel); con él vinculado en otra unidad, se corrige la escala; con pocas líneas basta
+el contorno. «¿Qué es esto?» no pregunta por capas en Luminarias / Equipos y PCI, ni por capas de luminarias ni
+contornos (CONT, ROOM, AREA, BNDY); nueva respuesta para capas: «Luminarias dibujadas con líneas».
+Comprobado fuera de Revit: los 10 planos de alumbrado de prueba (las luminarias reconocidas coinciden con las de sus
+justificativos); funciones de bloque y clases de capa de los demás planos de prueba sin cambios
+(1.937 de 1.937); 395 pruebas OK. Copia previa: CadMepRevit_Combinado_Prueba_copia_20261118_luminarias.
+
+ACTUALIZACIÓN 18-11-2026 · BAJANTES, ARQUETAS Y SISTEMAS DE TUBERÍA
+-----------------------------------------------------------------
+Los círculos concéntricos de tubería se representan con un tramo vertical. Su base comparte XYZ con
+el eje de la red. Si coincide en el interior, se divide el eje conservando la pendiente. Los rótulos
+BAJA y SUBE prevalecen. Las redes colgadas y enterradas suben al nivel superior y las plantas con
+aparatos bajan al inferior. Las cotas verticales y los niveles que falten se señalan como SUPUESTOS.
+
+Arquetas, pozos y demás desagües llevan la tapa a la cota del nivel. Se usa la familia del bloque
+o una genérica colocable de la biblioteca, con la huella del CAD y la profundidad del nombre o
+SUPUESTA. Las arquetas eléctricas se colocan desde Equipos y PCI.
+
+Cada red de tubería se clasifica por capa, rótulos, aparatos cercanos al extremo y archivo. Se
+distinguen fecales, pluviales y drenaje y se favorece PVC u otro material de saneamiento indicado.
+El informe recoge el sistema y el tipo elegidos, así como las sustituciones, medidas y supuestos.
+Véase Pruebas\RESULTADO_TUBERIAS_BAJANTES_ARQUETAS_2026-11-18.txt.
+
+ACTUALIZACIÓN 17-11-2026 · TUBERÍAS SIN UNIONES Y CON PENDIENTES
+------------------------------------------------------------
+Este apartado sustituye las indicaciones anteriores sobre las uniones y la altura fija de Tuberías.
+Tuberías crea tramos rectos con extremos XYZ compartidos, sin codos, tes, cruces ni transiciones.
+El técnico pone las piezas. La conexión automática no puede estirar ni mover el tubo; si Revit intenta
+modificar sus extremos o añadir una pieza, se anula esa conexión y se explica en el informe.
+
+Las etiquetas % y ‰ y sus flechas se leen por geometría, sin depender de nombres de capa. Su pendiente
+se extiende hasta la siguiente bifurcación. Un voto aislado contrario se descarta si hay mayoría;
+empates y varios votos contrarios dejan el recorrido horizontal. Los anillos incompatibles dejan la red
+horizontal. Las cotas escritas fijan la red; C.I./solera/fondo se convierten al eje con el radio exterior.
+Sin cota, el eje más alto es SUPUESTO: 2500 mm en colgada o -600 mm en enterrada, relativo al nivel elegido.
+El nombre explícito de red colgada prevalece sobre menciones de conexión con enterrado en su leyenda.
+El informe incorpora PENDIENTES, con las referencias, cotas, descartes y coordenadas de los avisos.
+
+Las cotas DIMENSION tienen prioridad al modelar y se propagan con SizeAnnotations, igual que los rótulos
+y los textos del DWF opcional durante el modelado.
+Los demás botones conservan las firmas de la simulación previa al cambio.
+
+No se ejecutó instalar.cmd. Véase Pruebas\RESULTADO_PENDIENTES_SIN_UNIONES_2026-11-17.txt para los resultados
+reales y las limitaciones de compilación y comprobación en Revit de esta entrega.
+
+Qué es
+------
+Esta carpeta une las dos versiones que había en «cad a revit», sin tocar ninguna de ellas:
+
+  · De CadMepRevit (sin «2»): la interacción simplificada con el técnico. Se elige el plano y
+    la planta del proyecto cuando hay varios niveles.
+  · De CadMepRevit2: el motor de modelado, en src\CadMepRevit\Revit\MepBuilder.cs.
+
+NOVEDAD 16-11-2026: UN BOTÓN POR INSTALACIÓN
+--------------------------------------------
+«Modelar desde CAD» se ha dividido. La cinta tiene ahora: «Tuberías», «Conductos», «Bandejas», «Luminarias»,
+«Equipos y PCI». Cada botón pide el plano y la planta y modela solo lo suyo:
+  · Tuberías: tramos rectos y bajantes, aparatos sanitarios, válvulas y equipos de agua.
+  · Conductos: conductos y sus uniones, rejillas, difusores, compuertas y equipos de aire.
+  · Bandejas: bandejas de cables con uniones y tubos eléctricos (E-POWR-CNDT) rectos.
+  · Luminarias: luminarias (downlights, puntos de luz, tiras LED, emergencias) e interruptores/detectores de presencia.
+  · Equipos y PCI: extintores, BIE, detectores, sirenas, pulsadores, señales, cuadros, tomas y otros dispositivos.
+Si el bloque no tiene su familia en el proyecto ni en la biblioteca, se usa una GENÉRICA de Revit de su clase
+(p. ej. «M_Foco empotrado - Foco», «Extintor C02», «M_Detector de humos»); si no hay ninguna, un marcador 3D.
+Alturas SUPUESTAS (se avisan): luminarias 2,70 m, interruptores 1,10 m, tomas 0,30 m, cuadros 1,50 m, extintores 1,00 m,
+BIE 1,50 m, sirenas 2,30 m, detectores 2,70 m. Lo que otro botón ya colocó en el mismo sitio no se repite.
+El termostato es un «dispositivo»: ahora lo coloca «Equipos y PCI», no «Conductos».
+DWF OPCIONAL: «Tuberías», «Conductos» y «Bandejas», después del DWG, ofrecen elegir el DWF del mismo plano (Cancelar = sin
+DWF). Sus textos se suman a los del DWG sin duplicar, situados con la matriz que trae el propio DWF (comprobado: todos a
+menos de 3 cm de los del DWG). Solo DWF 6 del espacio modelo (no DWFx).
+Resultados: Pruebas\RESULTADO_BOTONES_SEPARADOS_2026-11-16.txt. NO probado dentro de Revit.
+
+Qué cambia respecto a CadMepRevit (sin «2»)
+-------------------------------------------
+1. «Modelar desde CAD» ya no cuelga tuberías y conductos del forjado ni modela sistema a sistema. Construye
+   como CadMepRevit2: una sola transacción, eje a 2500 mm sobre el nivel elegido, primero los tramos,
+   luego codos/tes/cruces, bloques y conexiones automáticas. Ctrl+Z lo deshace todo.
+   (La regla «bajo_forjado» sigue en el código, desactivada: Config\PlacementConfig.cs.)
+
+2. El modelado aplica los diámetros escritos junto a las tuberías:
+   · Mide desde el CENTRO del texto (antes medía desde su esquina inferior izquierda, que en un texto
+     vertical de «AFS:Ø16» queda a más de medio metro del tubo).
+   · Ya no exige que la capa del texto se parezca a la de la tubería. Antes, un «Ø100» en la capa
+     «AFS_Fria_Texto» solo se buscaba en tuberías de capas «AFS…»; en SAN_A no se aplicaba ninguno.
+     Ahora se prefiere la capa relacionada, pero si no hay ninguna cerca vale la tubería más cercana.
+     Si el rótulo empieza por un nombre de capa («ACS:Ø20»), solo vale esa capa.
+   · Lee también los atributos de bloques de etiqueta, los textos dentro de bloques, las directrices
+     múltiples (MULTILEADER) y las directrices (LEADER): si el rótulo tiene flecha, vale el tubo que
+     señala la flecha.
+   · La medida vale para todo el recorrido: los tramos unidos por codos o en línea toman el mismo
+     diámetro, hasta la siguiente te o hasta otro rótulo. Antes solo cambiaba el trozo más cercano.
+   · Tubo dibujado con sus dos bordes (dos líneas paralelas): el rótulo vale para las dos.
+   · Si dos tubos distintos quedan casi a la misma distancia, decide la orientación del texto. Si sigue
+     la duda, NO se aplica, y el informe lo dice.
+   · Entiende «Ø25», «DN25», «DN-25», «Diámetro 25», «Ø110x10» (diámetro × espesor),
+     pulgadas («Ø1/2"» → DN15) y «AFS Ø16 ACS Ø20» (una medida por capa).
+   · Las cotas DIMENSION siguen mandando si las hay.
+
+Correcciones tras la prueba en Revit del 13-11 (tarde)
+------------------------------------------------------
+Lo que se vio en tu prueba y su causa:
+  · NO HABÍA CODOS: el proyecto se creó con la plantilla «Construcción» (Construction-DefaultESPESP.rte). Sus tipos
+    «Por defecto» no tienen ninguna familia de codo, te, cruz ni transición, así que Revit no podía unir nada
+    (los informes de %LOCALAPPDATA%\CadMepRevit\informes lo decían en cada unión).
+  · DOS TUBOS POR CADA TUBERÍA: los DWG exportados de Revit (FONTANERIA_PB…) dibujan cada tubería con sus
+    dos bordes. Se modelaba cada borde como un tubo, sin diámetro y sin poder unirse.
+  · LÍNEAS RARAS: la capa de rótulos P-PIPE-IDEN (las directrices de las etiquetas) se modelaba como tubería.
+  · CAJAS EN VEZ DE REJILLAS Y EQUIPOS: el proyecto no tenía sus familias y se ponía un marcador.
+
+Lo que hacía la versión del 13-11:
+  1. Si los tipos de tubería o conducto no tienen uniones, les asigna codo, te, cruz y transición: las del
+     proyecto o, si no hay, las de la biblioteca de Revit de la empresa (M_Codo - Genérico, M_Codo rectangular -
+     Radio, M_Codo redondo…). Bibliotecas: %APPDATA%\CadMepRevit\bibliotecas.txt (por defecto la de Revit del
+     equipo y las carpetas de familias de la oficina). Se puede editar.
+  2. Carga la familia real de cada bloque por su nombre (los DWG de Revit se llaman «Familia - Tipo-…»). Si no
+     está y es una rejilla o difusor, pone una rejilla/difusor de Revit con conector (no una caja). Si no hay
+     ninguna, queda el marcador como antes y el informe lo dice.
+  3. Tuberías dibujadas con sus dos bordes: un solo tubo por el eje, con el diámetro dibujado (Revit elige el
+     nominal cuyo diámetro exterior coincide). En FONTANERIA_PB: 234 tubos, 62 codos, 32 tes, 4 cruces.
+  4. Lee los rótulos «FON. AFS Ø32» con su directriz y los aplica ya al modelar (en tuberías de línea simple manda
+     el rótulo; en las de doble línea, el rótulo si coincide con lo dibujado). La medida sigue el recorrido.
+  5. Con los rótulos, cada red de tubería toma su sistema: AFS → agua fría, ACS → caliente, RACS → retorno.
+  6. Conductos redondos (piezas «M_Codo redondo» o rótulos Ø) se modelan con un tipo redondo.
+  7. No modela las capas de rótulos y anotaciones de Revit (-IDEN, -ANNO, -NOTE…) ni los ejes -CNTR repetidos.
+  Todo se deshace con un solo Ctrl+Z.
+  Queda pendiente: en zonas muy densas (baños, junto a aparatos) algunos encuentros de 5 o 6 tubos no se unen
+  (38 de 139 en FONTANERIA_PB); el informe los lista.
+
+Comprobado (fuera de Revit, en este equipo)
+-------------------------------------------
+· Compila para Revit 2025 (.NET 8) y Revit 2027 (.NET 10): 0 avisos, 0 errores.
+· Pruebas automáticas: 135 superadas, también con los planos reales de
+  <carpeta de planos reales>\planos_reales. Detalle en
+  Pruebas\RESULTADO_PRUEBAS_VERSION_COMBINADA_2026-11-13.txt.
+· Comparación histórica de la asociación de medidas con los planos reales (tramos que reciben medida):
+      Plano    Antes                       Ahora
+      FON_A   26 de 258 tuberías          72 de 258
+      SAN_A    0 de 431 tuberías          51 de 431
+      CLI_B    6 de 327 conductos         42 de 327
+      CLI_C   15 de 327 conductos         63 de 327
+  El resto se queda con su medida y el informe dice por qué (rótulo lejano, dos tubos a la misma distancia…).
+· NO se ha probado dentro de Revit (no se ha instalado nada ni se ha ejecutado instalar.cmd).
+
+Cómo probarlo en el otro PC
+---------------------------
+1. Copie la carpeta CadMepRevit_Combinado completa al otro PC.
+2. Cierre Revit 2025 y 2027. Ese PC necesita el SDK de .NET 10.
+3. Doble clic en instalar.cmd. Pasa las pruebas, compila e instala. Sustituye cualquier versión anterior de
+   CAD MEP, porque usa el mismo identificador. Para volver a la anterior, ejecute instalar.cmd en su carpeta.
+4. En Revit, cree un proyecto nuevo con la plantilla «Sistemas» (Systems-DefaultESPESP.rte). Con «Construcción»
+   también funciona ahora (carga las uniones de la biblioteca), pero «Sistemas» trae tipos y sistemas MEP completos.
+5. Pruebe Bandejas con samples\bandejas_uniones.dxf. Compare las uniones en 3D con el diagnóstico
+   del informe y compruebe que los tubos eléctricos quedan rectos.
+6. Vincule un plano de iluminación o PCI, muévalo y gírelo. Ejecute su botón y revise la línea
+   «Posición» y las familias en %LOCALAPPDATA%\CadMepRevit\ultimo_informe.txt.
+7. Para comprobar los diámetros, modele Tuberías sobre un plano con rótulos Ø/DN. Si Revit usa un
+   tamaño disponible distinto, el informe lo indica. Ctrl+Z deshace el modelado.
+
+NOVEDAD 17-11-2026 (tarde): DIBUJO INTERIOR DE CONDUCTOS Y UNIDADES
+-------------------------------------------------------------------------
+· Doble línea de conductos y bandejas (OutlineDetector, ajuste CleanDrawing; tuberías y muros NO cambian):
+    - El eje dibujado dentro del conducto (con flechas de sentido) ya no se empareja con un borde: antes salía un
+      conducto de medio ancho y desplazado.
+    - Rejillas rayadas, rótulos y juntas de transición dibujados DENTRO del conducto no son conductos.
+    - Rectángulos con aspa (subida/bajada) no son conductos. Codos curvos (arcos o polilíneas): los dos tramos rectos
+      se prolongan hasta la esquina, sin trocitos.
+    - VENTILACION_GARAJE: extracción 112 → 34 tramos, impulsión 106 → 19, 0 conductos superpuestos (antes 8 y 2).
+      VENTILACION_S1 casi igual (64 → 61). Tuberías de los 14 planos: idénticas a antes.
+· Unidades absurdas en la cabecera (dice mm y el dibujo mide 0,16 m): se lee en la unidad métrica que da un tamaño
+  de planta razonable y el informe lo explica (LayerPlanning.FixImplausibleUnits).
+· Pendientes (revisión del trabajo de Codex): un anillo que no cierra o una bifurcación con dos salidas deja
+  horizontales SOLO sus recorridos, no la red entera (RED COLGADA 20 → 25 recorridos con pendiente; ENTERRADA
+  18 → 47). Un plano cuya leyenda nombra red enterrada y colgada ya no se toma por enterrado.
+· Compila para Revit 2025 y 2027 (paquetes NuGet de la API): 0 avisos, 0 errores. 302 pruebas superadas.
+  NO probado dentro de Revit.

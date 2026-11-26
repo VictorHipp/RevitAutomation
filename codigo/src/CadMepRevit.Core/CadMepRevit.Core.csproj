@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Núcleo sin dependencias de Revit: lectura CAD, mapeo de capas y topología.
+       Se puede probar fuera de Revit con el proyecto CadMepRevit.Tests. -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net48</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <RootNamespace>CadMepRevit.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Misma versión que otros complementos instalados en este equipo para evitar
+         conflictos de carga de ensamblados dentro de Revit 2025. -->
+    <PackageReference Include="ACadSharp" Version="3.8.35" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="CadMepRevit.Tests" />
+    <InternalsVisibleTo Include="CadMepRevit.SlopeTests" />
+    <InternalsVisibleTo Include="CadMepRevit" />
+    <InternalsVisibleTo Include="RevitAutomation" />
+  </ItemGroup>
+</Project>

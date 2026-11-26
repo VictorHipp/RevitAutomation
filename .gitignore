@@ -1,0 +1,28 @@
+# ---------------------------------------------------------------------------
+# RevitAutomation · archivos que NO se suben a GitHub / files NOT pushed to GitHub
+# (codigo/.gitignore añade las reglas propias del código / adds the code rules)
+# ---------------------------------------------------------------------------
+
+# Instalador generado: se regenera con codigo/CREAR_INSTALADOR.cmd
+# Generated installer: rebuild it with codigo/CREAR_INSTALADOR.cmd
+*.exe
+
+# Familias de la biblioteca de Revit (contenido de Autodesk): no se publican.
+# Revit library families (Autodesk content): not published.
+# Ver / see codigo/familias_uniones/LEEME.md · README.md
+codigo/familias_uniones/*.rfa
+
+# Compilación / build output
+bin/
+obj/
+.vs/
+*.user
+
+# Planos reales, informes y firmas de comparación (confidenciales)
+# Real drawings, reports and comparison signatures (confidential)
+Pruebas/
+FIRMAS_*.json
+planos_reales/
+
+# Ajustes locales de Claude Code / Claude Code local settings
+.claude/settings.local.json

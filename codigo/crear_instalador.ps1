@@ -1,0 +1,133 @@
+﻿# Genera Instalar_RevitAutomation.exe: pasa las pruebas, compila el complemento para Revit 2023, 2024, 2025, 2026 y 2027,
+# lo empaqueta y crea el instalador. No instala nada en este equipo.
+# Uso: doble clic en CREAR_INSTALADOR.cmd, o:
+#      powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 [-SinPruebas] [-Salida <carpeta>]
+# Por defecto el .exe se deja en la carpeta que contiene la del código.
+param([switch]$SinPruebas, [string]$Salida)
+
+$ErrorActionPreference = 'Stop'
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (-not $Salida) { $Salida = Split-Path -Parent $root }
+
+function Fallo($que, $como) {
+    Write-Host ''
+    Write-Host "ERROR: $que" -ForegroundColor Red
+    Write-Host "Cómo corregirlo: $como" -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host '=== RevitAutomation: crear el instalador Instalar_RevitAutomation.exe ===' -ForegroundColor Cyan
+
+# 1) SDK de .NET 10 o posterior (compila las versiones para Revit 2023 a 2027; 2023 y 2024 con .NET Framework 4.8)
+$candidatos = @()
+if ($env:DOTNET_ROOT) { $candidatos += Join-Path $env:DOTNET_ROOT 'dotnet.exe' }
+$candidatos += Join-Path $env:USERPROFILE '.dotnet\dotnet.exe'
+$cmd = Get-Command dotnet -ErrorAction SilentlyContinue
+if ($cmd) { $candidatos += $cmd.Source }
+$dotnet = $null
+foreach ($c in $candidatos) {
+    if (-not (Test-Path $c)) { continue }
+    $sdks = @(& $c --list-sdks 2>$null)
+    if ($sdks | Where-Object { $_ -match '^(\d+)\.' -and [int]$Matches[1] -ge 10 }) { $dotnet = $c; break }
+}
+if (-not $dotnet) {
+    Fallo 'No se encuentra el SDK de .NET 10 o posterior.' 'Instálelo desde https://dotnet.microsoft.com/download (SDK, no solo el runtime) y repita.'
+}
+$env:DOTNET_ROOT = Split-Path -Parent $dotnet
+$env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+$env:DOTNET_NOLOGO = '1'
+$env:DOTNET_ROLL_FORWARD = 'Major'   # las pruebas (.NET 8) también corren con solo el SDK 10
+Write-Host "SDK de .NET: $dotnet"
+
+# 2) Pruebas automáticas (fuera de Revit). Los archivos que generan quedan en obj, no en ejemplos.
+if (-not $SinPruebas) {
+    Write-Host 'Ejecutando las pruebas automáticas (fuera de Revit)...'
+    $tmp = Join-Path $root 'tests\CadMepRevit.Tests\obj\pruebas-instalador'
+    New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+    & $dotnet run --project (Join-Path $root 'tests\CadMepRevit.Tests') -c Release -- $tmp
+    if ($LASTEXITCODE -ne 0) { Fallo 'Las pruebas automáticas han fallado.' 'Revise los mensajes anteriores. Para generar el instalador igualmente: crear_instalador.ps1 -SinPruebas' }
+    # Pruebas de la lógica de las herramientas de RevitAutomation (etiquetado, salas, patinillo, aislamiento, planos…).
+    foreach ($h in Get-ChildItem (Join-Path $root 'tests\RevitAutomation.Pruebas') -Directory) {
+        Write-Host "Pruebas de $($h.Name)..."
+        & $dotnet run -c Release --project $h.FullName | Select-Object -Last 1
+        if ($LASTEXITCODE -ne 0) { Fallo "Las pruebas de $($h.Name) han fallado." 'Ejecútelas por separado con dotnet run para ver el detalle. Para generar el instalador igualmente: crear_instalador.ps1 -SinPruebas' }
+    }
+}
+
+# 3) Compilar el complemento para cada versión de Revit, sin símbolos de depuración
+#    (así no se incrustan rutas de este equipo en los DLL).
+$stage = Join-Path $root 'instalador\obj\paquete'
+if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+$versiones = @(
+    @{ Anio = '2023'; Tfm = 'net48' },
+    @{ Anio = '2024'; Tfm = 'net48' },
+    @{ Anio = '2025'; Tfm = 'net8.0-windows' },
+    @{ Anio = '2026'; Tfm = 'net8.0-windows' },
+    @{ Anio = '2027'; Tfm = 'net10.0-windows' }
+)
+foreach ($v in $versiones) {
+    Write-Host "Compilando RevitAutomation para Revit $($v.Anio)..."
+    $obj = "-p:IntermediateOutputPath=obj\paquete\$($v.Anio)\"
+    & $dotnet build (Join-Path $root 'src\RevitAutomation\RevitAutomation.csproj') -c Release -f $v.Tfm `
+        "-p:RevitYear=$($v.Anio)" -p:DebugType=none -p:DebugSymbols=false $obj --no-incremental `
+        -o (Join-Path $stage $v.Anio) -nologo -v minimal
+    if ($LASTEXITCODE -ne 0) { Fallo "La compilación para Revit $($v.Anio) ha fallado." 'Revise los errores anteriores. Sin Revit instalado, la API se descarga de NuGet: compruebe la conexión a Internet.' }
+    Get-ChildItem (Join-Path $stage $v.Anio) -Recurse -Include *.pdb, RevitAPI*.dll | Remove-Item -Force
+    foreach ($dll in 'RevitAutomation.dll', 'CadMepRevit.dll', 'CadMepRevit.Core.dll', 'ACadSharp.dll') {
+        if (-not (Test-Path (Join-Path $stage "$($v.Anio)\$dll"))) { Fallo "No se ha generado $dll para Revit $($v.Anio)." 'Revise los mensajes de la compilación.' }
+    }
+}
+# 4) Archivos comunes: guía y planos de ejemplo
+$comun = Join-Path $stage 'comun'
+New-Item -ItemType Directory -Force -Path (Join-Path $comun 'Ejemplos') | Out-Null
+Copy-Item (Join-Path $root 'docs\Guia_CadMepRevit.txt') $comun -Force
+Get-ChildItem (Join-Path $root 'ejemplos') -Include *.dwg, *.dxf -File -Recurse -ErrorAction SilentlyContinue |
+    Copy-Item -Destination (Join-Path $comun 'Ejemplos') -Force
+# Familias de codos, tes, cruces y transiciones (tubería y conducto rectangular y redondo): el complemento las carga si
+# el proyecto y la biblioteca de Revit no tienen ninguna (si no, Revit no puede crear las uniones).
+New-Item -ItemType Directory -Force -Path (Join-Path $comun 'Familias') | Out-Null
+Get-ChildItem (Join-Path $root 'familias_uniones') -Filter *.rfa -File -ErrorAction SilentlyContinue |
+    Copy-Item -Destination (Join-Path $comun 'Familias') -Force
+if (-not (Get-ChildItem (Join-Path $comun 'Familias') -Filter *.rfa)) { Fallo 'No se encuentran las familias de uniones (familias_uniones\*.rfa).' 'Restaure la carpeta familias_uniones del proyecto y repita.' }
+
+# 5) Comprobar que el paquete no lleva rutas ni nombres de este equipo
+function Test-Contiene([string]$archivo, [string[]]$terminos) {
+    $bytes = [IO.File]::ReadAllBytes($archivo)
+    $u8 = [Text.Encoding]::UTF8.GetString($bytes)
+    $u16 = [Text.Encoding]::Unicode.GetString($bytes)
+    foreach ($t in $terminos) {
+        if ($u8.IndexOf($t, [StringComparison]::OrdinalIgnoreCase) -ge 0 -or $u16.IndexOf($t, [StringComparison]::OrdinalIgnoreCase) -ge 0) { return $t }
+    }
+    return $null
+}
+$terminos = @($env:USERPROFILE, $env:USERNAME, $env:COMPUTERNAME) | Where-Object { $_ -and $_.Length -ge 4 }
+foreach ($f in Get-ChildItem $stage -Recurse -File) {
+    $t = Test-Contiene $f.FullName $terminos
+    if ($t) { Fallo "El archivo $($f.Name) del paquete contiene '$t' (datos de este equipo)." 'Compruebe que se compila sin símbolos de depuración (DebugType=none) y repita.' }
+}
+
+# 6) Empaquetar y crear el instalador
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = Join-Path $root 'instalador\obj\paquete.zip'
+if (Test-Path $zip) { Remove-Item $zip -Force }
+[IO.Compression.ZipFile]::CreateFromDirectory($stage, $zip, [IO.Compression.CompressionLevel]::Optimal, $false)
+
+Write-Host 'Creando Instalar_RevitAutomation.exe...'
+$binInst = Join-Path $root 'instalador\bin\salida'
+& $dotnet build (Join-Path $root 'instalador\InstaladorCadMep.csproj') -c Release -p:DebugType=none -p:DebugSymbols=false `
+    --no-incremental -o $binInst -nologo -v minimal
+if ($LASTEXITCODE -ne 0) { Fallo 'La compilación del instalador ha fallado.' 'Revise los errores anteriores.' }
+$exe = Join-Path $binInst 'Instalar_RevitAutomation.exe'
+$t = Test-Contiene $exe $terminos
+if ($t) { Fallo "Instalar_RevitAutomation.exe contiene '$t' (datos de este equipo)." 'Compruebe que se compila sin símbolos de depuración y repita.' }
+
+New-Item -ItemType Directory -Force -Path $Salida | Out-Null
+$final = Join-Path $Salida 'Instalar_RevitAutomation.exe'
+Copy-Item $exe $final -Force
+$hash = (Get-FileHash $final -Algorithm SHA256).Hash
+Write-Host ''
+Write-Host 'INSTALADOR CREADO correctamente.' -ForegroundColor Green
+Write-Host "  Archivo: $final"
+Write-Host "  Tamaño:  $([math]::Round((Get-Item $final).Length / 1MB, 2)) MB"
+Write-Host "  SHA256:  $hash"
+Write-Host 'Para instalar: doble clic en Instalar_RevitAutomation.exe en el equipo con Revit 2023, 2024, 2025, 2026 o 2027.'

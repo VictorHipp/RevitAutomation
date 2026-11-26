@@ -1,0 +1,62 @@
+<Project>
+  <!-- Versiones de Revit: 2023 y 2024 (.NET Framework 4.8), 2025 y 2026 (.NET 8) y 2027 (.NET 10). Cada versión se compila
+       contra su propia API. Sin RevitYear: net48 → 2024, net8.0-windows → 2025 y net10.0-windows → 2027.
+       Ejemplo: dotnet build -f net48 -p:RevitYear=2023 (crear_instalador.ps1 compila las cinco, cada una en su carpeta obj). -->
+  <PropertyGroup>
+    <BuildForRevit2027 Condition="'$(BuildForRevit2027)' == '' And Exists('C:\Program Files\Autodesk\Revit 2027\RevitAPI.dll') And $([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '10.0'))">true</BuildForRevit2027>
+    <TargetFrameworks>net8.0-windows</TargetFrameworks>
+    <TargetFrameworks Condition="'$(BuildForRevit2027)' == 'true'">net8.0-windows;net10.0-windows</TargetFrameworks>
+    <!-- Con un año pedido (-p:RevitYear=…) solo se compila (y restaura) su plataforma. -->
+    <TargetFrameworks Condition="'$(RevitYear)' == '2023' Or '$(RevitYear)' == '2024'">net48</TargetFrameworks>
+    <TargetFrameworks Condition="'$(RevitYear)' == '2025' Or '$(RevitYear)' == '2026'">net8.0-windows</TargetFrameworks>
+    <TargetFrameworks Condition="'$(RevitYear)' == '2027'">net10.0-windows</TargetFrameworks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net48' And '$(RevitYear)' == ''">
+    <RevitYear>2024</RevitYear>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows' And '$(RevitYear)' == ''">
+    <RevitYear>2025</RevitYear>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-windows' And '$(RevitYear)' == ''">
+    <RevitYear>2027</RevitYear>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RevitYear)' != ''">
+    <RevitApiMajor>$(RevitYear.Substring(2))</RevitApiMajor>
+    <DefineConstants>$(DefineConstants);REVIT$(RevitYear)</DefineConstants>
+    <RevitInstallDir>C:\Program Files\Autodesk\Revit $(RevitYear)</RevitInstallDir>
+    <!-- Si esa versión de Revit no está instalada en este equipo se compila con el paquete NuGet de su API. -->
+    <UseNuGetRevitReferences Condition="!Exists('$(RevitInstallDir)\RevitAPI.dll')">true</UseNuGetRevitReferences>
+    <RevitApiPackageVersion Condition="'$(RevitYear)' == '2023'">2023.4.0</RevitApiPackageVersion>
+    <RevitApiPackageVersion Condition="'$(RevitYear)' == '2024'">2024.3.0</RevitApiPackageVersion>
+    <RevitApiPackageVersion Condition="'$(RevitYear)' == '2025'">2025.4.60</RevitApiPackageVersion>
+    <RevitApiPackageVersion Condition="'$(RevitYear)' == '2026'">2026.4.10</RevitApiPackageVersion>
+    <RevitApiPackageVersion Condition="'$(RevitYear)' == '2027'">2027.4.0</RevitApiPackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(RevitYear)' != '' And '$(UseNuGetRevitReferences)' != 'true'">
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitInstallDir)\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitInstallDir)\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(RevitYear)' != '' And '$(UseNuGetRevitReferences)' == 'true'">
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitApiPackageVersion)" IncludeAssets="compile" PrivateAssets="all" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitApiPackageVersion)" IncludeAssets="compile" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Comprueba que la API usada es realmente la de la versión de Revit de esta compilación (23.x a 27.x). -->
+  <Target Name="ValidateRevitApiVersion" AfterTargets="ResolveReferences" Condition="'$(TargetFramework)' != ''">
+    <ItemGroup>
+      <_RevitApiRef Include="@(ReferencePath)" Condition="'%(Filename)' == 'RevitAPI'" />
+    </ItemGroup>
+    <GetAssemblyIdentity AssemblyFiles="@(_RevitApiRef)">
+      <Output TaskParameter="Assemblies" ItemName="_RevitApiId" />
+    </GetAssemblyIdentity>
+    <Error Condition="!$([System.String]::Copy('%(_RevitApiId.Version)').StartsWith('$(RevitApiMajor).'))"
+           Text="La API de Revit referenciada no es la de Revit $(RevitYear): %(_RevitApiId.Identity)" />
+  </Target>
+</Project>
