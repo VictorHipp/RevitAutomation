@@ -7,14 +7,17 @@
 #     del paquete de NuGet que, si no está, descarga el SDK,
 #   - Git para Windows (descargar y actualizar el repositorio),
 #   - GitHub CLI, solo si la persona va a desarrollar (se pregunta).
+# Al final comprueba las 12 familias de uniones de reserva (contenido de Autodesk, no se instalan solas): las busca y copia
+# a familias_uniones las que encuentre (-Familias, REVITAUTOMATION_FAMILIAS, bibliotecas de Revit) y avisa de las que falten.
 # Lo ya instalado se salta. Usa winget si está disponible; si no, descarga el instalador oficial desde su enlace
 # directo, comprueba su firma digital y lo ejecuta sin ventanas. Windows pide permiso de administrador una sola vez.
 # Uso: doble clic en PREPARAR_PC.cmd, o:
-#      powershell -ExecutionPolicy Bypass -File preparar_pc.ps1 [-SoloDotnet] [-Desarrollo]
+#      powershell -ExecutionPolicy Bypass -File preparar_pc.ps1 [-SoloDotnet] [-Desarrollo] [-Familias <carpeta>]
 # -SoloDotnet: solo los dos SDK de .NET (lo usa crear_instalador.ps1).
 # -Desarrollo: instala también GitHub CLI sin preguntar.
+# -Familias: carpeta (p. ej. del servidor de la oficina) donde buscar las familias de uniones que falten.
 # -Elevado / -Instalar: uso interno (la copia que se ejecuta como administrador).
-param([switch]$SoloDotnet, [switch]$Desarrollo, [switch]$Elevado, [string]$Instalar)
+param([switch]$SoloDotnet, [switch]$Desarrollo, [switch]$Elevado, [string]$Instalar, [string]$Familias)
 
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
@@ -342,10 +345,30 @@ if ($siguenFaltando.Count) {
           "Lea los mensajes de la ventana de instalación y vuelva a ejecutar PREPARAR_PC.cmd. También puede instalarlo a mano: $lista. Después cierre y vuelva a abrir PowerShell."
 }
 
+# Familias de uniones de reserva: son de Autodesk, no se pueden descargar ni instalar solas. Se buscan (familias_uniones,
+# -Familias, REVITAUTOMATION_FAMILIAS y bibliotecas de Revit del PC), se copian las que se encuentren y se avisa de las que
+# falten. No es un error: el instalador se crea igual, sin ellas.
+$faltanFamilias = @()
+if (-not $SoloDotnet) {
+    Write-Host ''
+    Write-Host 'Familias de uniones de reserva (12 .rfa de la biblioteca de Autodesk; no están en el repositorio):'
+    $codigo = Split-Path -Parent $script
+    . (Join-Path $codigo 'buscar_familias.ps1')
+    $faltanFamilias = @(Find-FamiliasUniones (Join-Path $codigo 'familias_uniones') $Familias)
+    if ($faltanFamilias.Count -eq 0) {
+        Write-Host '  [OK]    Las 12 están en codigo\familias_uniones.' -ForegroundColor Green
+    } else {
+        Write-Host ("  [AVISO] Faltan {0} de 12: {1}." -f $faltanFamilias.Count, (($faltanFamilias | ForEach-Object { "$_.rfa" }) -join ', ')) -ForegroundColor Yellow
+        Write-Host '          Cópielas en codigo\familias_uniones, o vuelva a ejecutar PREPARAR_PC.cmd -Familias <carpeta> (p. ej. del servidor),' -ForegroundColor Yellow
+        Write-Host '          o instale la biblioteca de contenido de Revit (España). Ver docs\es\02-instalacion.md, apartado 2.4.' -ForegroundColor Yellow
+        Write-Host '          Sin ellas el instalador se crea igual; CAD-REV usará las uniones del proyecto o de la oficina.' -ForegroundColor Yellow
+    }
+}
+
 Write-Host ''
 Write-Host 'TODO LISTO.' -ForegroundColor Green
 if (-not $SoloDotnet) {
-    Write-Host 'Siguiente paso: si las tiene, ponga las 12 familias de uniones en la carpeta familias_uniones (Instalación, paso 2.4;'
-    Write-Host 'si faltan, CREAR_INSTALADOR las busca y avisa) y haga doble clic en CREAR_INSTALADOR.cmd (paso 2.5).'
+    if ($faltanFamilias.Count -gt 0) { Write-Host 'Siguiente paso: ponga las familias de uniones que faltan (paso 2.4) y haga doble clic en CREAR_INSTALADOR.cmd (paso 2.5).' }
+    else { Write-Host 'Siguiente paso: haga doble clic en CREAR_INSTALADOR.cmd (paso 2.5).' }
 }
 exit 0

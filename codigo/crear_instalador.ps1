@@ -128,44 +128,16 @@ New-Item -ItemType Directory -Force -Path (Join-Path $comun 'Familias') | Out-Nu
 if ($SinFamilias) {
     $avisoFamilias = 'Instalador sin familias de uniones (-SinFamilias).'
 } else {
-    $necesarias = @('M_Codo - Genérico', 'M_Te - Genérica', 'M_Cruz - Genérica', 'M_Transición - Genérica',
-        'M_Codo rectangular - Radio 1', 'M_Te rectangular - Recto', 'M_Cruz rectangular -  Recta', 'M_Transición rectangular - Ángulo 2',
-        'M_Codo redondo 1', 'M_Te redonda - Recto', 'M_Cruz redonda - Recto', 'M_Transición redonda - Ángulo')
-    $faltan = @($necesarias | Where-Object { -not (Test-Path -LiteralPath (Join-Path $carpetaFamilias "$_.rfa")) })
+    # La lista de las 12 y la búsqueda están en buscar_familias.ps1 (también la usa preparar_pc.ps1).
+    . (Join-Path $root 'buscar_familias.ps1')
+    $faltan = @(Find-FamiliasUniones $carpetaFamilias $Familias)
     if ($faltan.Count -gt 0) {
-        $origenes = @()
-        if ($Familias) { $origenes += $Familias }
-        if ($env:REVITAUTOMATION_FAMILIAS) { $origenes += $env:REVITAUTOMATION_FAMILIAS }
-        $programData = if ($env:ProgramData) { $env:ProgramData } else { 'C:\ProgramData' }
-        $origenes += @(Get-ChildItem (Join-Path $programData 'Autodesk') -Directory -Filter 'RVT *' -Force -ErrorAction SilentlyContinue |
-            Sort-Object Name -Descending | ForEach-Object { Join-Path $_.FullName 'Libraries' })
-        Write-Host "Buscando $($faltan.Count) familias de uniones que faltan en familias_uniones..."
-        New-Item -ItemType Directory -Force -Path $carpetaFamilias | Out-Null
-        foreach ($origen in $origenes) {
-            if ($faltan.Count -eq 0) { break }
-            if (-not (Test-Path -LiteralPath $origen)) {
-                if ($origen -eq $Familias -or $origen -eq $env:REVITAUTOMATION_FAMILIAS) { Write-Host "  AVISO: no existe la carpeta $origen" -ForegroundColor Yellow }
-                continue
-            }
-            # Un solo recorrido por origen; se compara el nombre exacto (Filter no distingue bien los dos espacios ni las tildes).
-            $rfas = @(Get-ChildItem -LiteralPath $origen -Recurse -File -Filter *.rfa -Force -ErrorAction SilentlyContinue)
-            foreach ($nombre in @($faltan)) {
-                $hallado = $rfas | Where-Object { $_.Name -eq "$nombre.rfa" } | Select-Object -First 1
-                if ($hallado) {
-                    Copy-Item -LiteralPath $hallado.FullName -Destination (Join-Path $carpetaFamilias $hallado.Name) -Force
-                    Write-Host "  OK   $($hallado.Name)  (de $origen)"
-                    $faltan = @($faltan | Where-Object { $_ -ne $nombre })
-                }
-            }
-        }
-        if ($faltan.Count -gt 0) {
-            $avisoFamilias = "Faltan $($faltan.Count) de las 12 familias de uniones; el instalador se crea sin ellas:`n    " +
-                (($faltan | ForEach-Object { "$_.rfa" }) -join "`n    ") +
-                "`n  Sin ellas, CAD-REV usa las familias de uniones del proyecto o de las bibliotecas de la oficina; si no hay" +
-                "`n  ninguna, Revit no crea esas uniones y lo indica en el informe." +
-                "`n  Cómo corregirlo: copie los .rfa en codigo\familias_uniones (o indique su carpeta con -Familias <carpeta> o la" +
-                "`n  variable REVITAUTOMATION_FAMILIAS) y vuelva a crear el instalador. Ver docs\es\02-instalacion.md, apartado 2.4."
-        }
+        $avisoFamilias = "Faltan $($faltan.Count) de las 12 familias de uniones; el instalador se crea sin ellas:`n    " +
+            (($faltan | ForEach-Object { "$_.rfa" }) -join "`n    ") +
+            "`n  Sin ellas, CAD-REV usa las familias de uniones del proyecto o de las bibliotecas de la oficina; si no hay" +
+            "`n  ninguna, Revit no crea esas uniones y lo indica en el informe." +
+            "`n  Cómo corregirlo: copie los .rfa en codigo\familias_uniones (o indique su carpeta con -Familias <carpeta> o la" +
+            "`n  variable REVITAUTOMATION_FAMILIAS) y vuelva a crear el instalador. Ver docs\es\02-instalacion.md, apartado 2.4."
     }
 }
 Get-ChildItem -LiteralPath $carpetaFamilias -Filter *.rfa -File -ErrorAction SilentlyContinue |

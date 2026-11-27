@@ -1,6 +1,21 @@
 ﻿CAD MEP para Revit · VERSIÓN COMBINADA (13-11-2026)
 ====================================================
 
+ACTUALIZACIÓN 27-11-2026 · CRUCES DE TUBERÍAS, BAJANTES, TUBOS ELÉCTRICOS Y FAMILIAS
+----------------------------------------------------------------------------------
+Tras una prueba real en Revit 2025 (0 de 69 uniones creadas, tubos solapados en las esquinas):
+· Faltaban las familias de unión: el instalador se había generado sin las 12 de reserva. PREPARAR_PC y CREAR_INSTALADOR
+  las detectan ahora con el mismo script (buscar_familias.ps1), las copian si las encuentran y avisan si faltan.
+· Tuberías a doble línea exportadas de Revit: un tubo cortado donde pasa otro es un CRUCE (queda recto y sin unir); se
+  descartan restos de testa de menos de 5 mm; las parejas de bordes se mantienen (no más tubos fantasma); un codo ya no
+  se convierte en te con un tubo vecino; los cuerpos de pieza dibujados con líneas no se alargan hasta otro tubo.
+  En el plano de la prueba: tramos 121 → 93, tes 12 → 6, cruces 8 → 0.
+· Bajantes: toman el diámetro de su tubo (antes el del círculo interior, la mitad). Un círculo más pequeño que su tubo sin
+  rótulo SUBE/BAJA no se modela y el informe lo lista («REVISAR»).
+· Tubos eléctricos (botón Bandejas): codos, tes, cruces y reducciones.
+Detalle en docs\ESPEC_UNIONES_TUBERIAS_Y_TUBOS_2026-11-27.md. Comprobado fuera de Revit (395 pruebas, comparación de
+planes); NO probado dentro de Revit.
+
 ACTUALIZACIÓN 19-11-2026 · UNIONES, HUECOS Y ACCESORIOS
 ----------------------------------------------------
 (Implementado por Codex, que se quedó sin créditos antes de cerrar; comparación final, informe y compilado los

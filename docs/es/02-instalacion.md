@@ -46,7 +46,8 @@ Abra la carpeta `RevitAutomation\codigo` y haga **doble clic en `PREPARAR_PC.cmd
 1. Muestra qué hay instalado (`[OK]`) y qué falta (`[FALTA]`): SDK de .NET 10, SDK de .NET 8, .NET Framework 4.8 (runtime), Developer Pack de .NET Framework 4.8 y Git.
 2. Si GitHub CLI no está, pregunta: «¿Va a desarrollar el complemento o subir cambios a GitHub? (S/N)». Para solo instalar el complemento, responda **N**.
 3. Instala lo que falta sin más clics. Windows pide permiso de administrador **una vez**: pulse **«Sí»**. El progreso se ve en otra ventana.
-4. Al terminar muestra **«TODO LISTO»**, o qué ha fallado y cómo corregirlo. Lo ya instalado se salta, así que puede ejecutarlo las veces que quiera.
+4. Comprueba las 12 familias de uniones ([2.4](#24-conseguir-las-12-familias-de-uniones)): copia las que encuentre y avisa (`[AVISO]`) de las que falten; no es un error. Con `PREPARAR_PC.cmd -Familias <carpeta>` las busca también en esa carpeta.
+5. Al terminar muestra **«TODO LISTO»**, o qué ha fallado y cómo corregirlo. Lo ya instalado se salta, así que puede ejecutarlo las veces que quiera.
 
 Usa `winget` si el PC lo tiene. Si no, descarga el instalador oficial desde su enlace directo, comprueba que está firmado por su fabricante y lo ejecuta. También activa las rutas largas de Git (`core.longpaths`).
 
@@ -71,7 +72,7 @@ Notas:
 
 El instalador lleva las familias de uniones de reserva que haya en `codigo\familias_uniones\`. **Son contenido de Autodesk y no están en el repositorio**. Sin ellas el instalador se crea igualmente, pero CAD-REV pierde la reserva de último recurso: en un proyecto sin familias de uniones cargadas, Revit no crea esas uniones y lo indica en el informe. La lista de los 12 archivos está en [`codigo/familias_uniones/LEEME.md`](../../codigo/familias_uniones/LEEME.md).
 
-**Búsqueda automática.** `CREAR_INSTALADOR.cmd` busca las que falten y las copia a `codigo\familias_uniones\`. Busca, por este orden:
+**Búsqueda automática.** `PREPARAR_PC.cmd` y `CREAR_INSTALADOR.cmd` buscan las que falten y las copian a `codigo\familias_uniones\`. Buscan, por este orden:
 1. en la carpeta indicada con `-Familias <carpeta>`;
 2. en la variable de entorno `REVITAUTOMATION_FAMILIAS`;
 3. en las bibliotecas de Revit instaladas en el equipo (`C:\ProgramData\Autodesk\RVT <año>\Libraries`, de la más nueva a la más antigua).

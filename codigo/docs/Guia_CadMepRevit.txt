@@ -9,8 +9,8 @@ por instalación; ninguno pide medidas ni ajustes:
                             aparatos sanitarios, válvulas, grifos y equipos de agua.
   2. CONDUCTOS            → conductos con codos, tes, cruces y reducciones. Coloca
                             rejillas, difusores, compuertas y ventiladores.
-  3. BANDEJAS             → bandejas de cables con codos, tes, cruces y reducciones.
-                            Los tubos eléctricos quedan como tramos rectos.
+  3. BANDEJAS             → bandejas de cables y tubos eléctricos, los dos con codos,
+                            tes, cruces y reducciones.
   4. LUMINARIAS           → luminarias (downlights, puntos de luz, tiras LED, emergencias),
                             interruptores y detectores de presencia.
   5. EQUIPOS Y PCI        → extintores, BIE, detectores, pulsadores, sirenas, señales,

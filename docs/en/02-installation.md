@@ -46,7 +46,8 @@ Open the `RevitAutomation\codigo` folder and **double-click `PREPARAR_PC.cmd`**.
 1. It shows what is installed (`[OK]`) and what is missing (`[FALTA]`): .NET 10 SDK, .NET 8 SDK, .NET Framework 4.8 (runtime), .NET Framework 4.8 Developer Pack and Git.
 2. If GitHub CLI is missing, it asks: «¿Va a desarrollar el complemento o subir cambios a GitHub? (S/N)» (will you develop the add-in or push changes to GitHub?). To only install the add-in, answer **N**.
 3. It installs what is missing with no further clicks. Windows asks for administrator permission **once**: click **«Yes»**. Progress is shown in another window.
-4. At the end it shows **«TODO LISTO»** (all done), or what failed and how to fix it. Whatever is already installed is skipped, so you can run it as often as you like.
+4. It checks the 12 fitting families ([2.4](#24-getting-the-12-fitting-families)): it copies the ones it finds and warns (`[AVISO]`) about missing ones; this is not an error. With `PREPARAR_PC.cmd -Familias <folder>` it also searches that folder.
+5. At the end it shows **«TODO LISTO»** (all done), or what failed and how to fix it. Whatever is already installed is skipped, so you can run it as often as you like.
 
 It uses `winget` when the PC has it. Otherwise it downloads the official installer from its direct link, checks that it is signed by its publisher and runs it. It also enables Git long paths (`core.longpaths`).
 
@@ -71,7 +72,7 @@ Notes:
 
 The installer carries whatever fallback fitting families are in `codigo\familias_uniones\`. They are **Autodesk content and are not in the repository**. Without them the installer is still created, but CAD-REV loses its last-resort fallback: in a project with no fitting families loaded, Revit does not create those fittings and the report says so. The list of the 12 files is in [`codigo/familias_uniones/README.md`](../../codigo/familias_uniones/README.md).
 
-**Automatic search.** `CREAR_INSTALADOR.cmd` looks for any missing families and copies them to `codigo\familias_uniones\`. It searches, in this order:
+**Automatic search.** `PREPARAR_PC.cmd` and `CREAR_INSTALADOR.cmd` look for any missing families and copy them to `codigo\familias_uniones\`. They search, in this order:
 1. the folder given with `-Familias <folder>`;
 2. the `REVITAUTOMATION_FAMILIAS` environment variable;
 3. the Revit libraries installed on the PC (`C:\ProgramData\Autodesk\RVT <year>\Libraries`, newest first).

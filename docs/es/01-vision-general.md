@@ -26,7 +26,7 @@ CAD-REV (antes «CAD MEP») lee un plano DWG o DXF y modela una instalación por
 |---|---|
 | **Tuberías** | Tuberías y bajantes, aparatos sanitarios, arquetas, equipos de agua y accesorios de tubería. Crea codos, tes y reducciones. Lee las pendientes (`%`, `‰`, flechas, cotas). Los encuentros de cuatro tubos se señalan para que los resuelva el técnico. |
 | **Conductos** | Conductos con codos, tes, cruces y transiciones. Rejillas, difusores, compuertas y equipos de aire a la cota y con el giro de su conducto. |
-| **Bandejas** | Bandejas de cables con sus uniones. Los tubos eléctricos quedan como tramos rectos. |
+| **Bandejas** | Bandejas de cables y tubos eléctricos, los dos con sus uniones (codos, tes, cruces y reducciones). |
 | **Luminarias** | Luminarias (downlights, tiras LED, emergencias…), interruptores y detectores de presencia, también las dibujadas con líneas sueltas en vez de bloques. |
 | **Equipos y PCI** | Extintores, BIE, detectores, pulsadores, sirenas, señales, cuadros eléctricos, tomas y otros dispositivos. |
 

@@ -26,7 +26,7 @@ CAD-REV (formerly «CAD MEP») reads a DWG or DXF drawing and models one buildin
 |---|---|
 | **Tuberías** (Pipes) | Pipes and vertical risers, sanitary fixtures, inspection chambers, water equipment and pipe accessories. Creates elbows, tees and reducers. Reads slopes (`%`, `‰`, arrows, elevation marks). Four-way pipe junctions are reported for the technician to resolve. |
 | **Conductos** (Ducts) | Ducts with elbows, tees, crosses and transitions. Grilles, diffusers, dampers and air equipment placed at the duct's elevation and orientation. |
-| **Bandejas** (Cable trays) | Cable trays with their fittings. Electrical conduits are modelled as straight runs. |
+| **Bandejas** (Cable trays) | Cable trays and electrical conduits, both with their fittings (elbows, tees, crosses and reductions). |
 | **Luminarias** (Lighting) | Lighting fixtures (downlights, LED strips, emergency lights…), switches and presence detectors, including fixtures drawn with loose lines instead of blocks. |
 | **Equipos y PCI** (Equipment & fire protection) | Extinguishers, hose reels, detectors, call points, sirens, signs, electrical panels, sockets and other devices. |
 
