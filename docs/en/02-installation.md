@@ -14,7 +14,7 @@ Summary. You only type **one command**, in step 2; everything else is a double-c
 | [2.1](#21-installing-git) | Install Git | Download it from the website and run it |
 | [2.2](#22-downloading-the-repository) | Download the project | `git clone https://github.com/VictorHipp/RevitAutomation.git` |
 | [2.3](#23-setting-up-the-pc-net-10-and-8-sdks) | Install the .NET 10 and 8 SDKs | Double-click `codigo\PREPARAR_PC.cmd` |
-| [2.4](#24-getting-the-12-fitting-families) | Add the 12 fitting families | Copy them into `codigo\familias_uniones\` |
+| [2.4](#24-getting-the-12-fitting-families) | Add the 12 fitting families (recommended) | Copy them into `codigo\familias_uniones\`, or let `CREAR_INSTALADOR.cmd` look for them |
 | [2.5](#25-creating-the-installer) | Create the installer | Double-click `codigo\CREAR_INSTALADOR.cmd` |
 | [2.6](#26-installing-in-revit) | Install in Revit | Double-click `Instalar_RevitAutomation.exe` |
 
@@ -67,7 +67,7 @@ Notes:
 
 ### 2.4 Getting the 12 fitting families
 
-The installer needs the fallback fitting families in `codigo\familias_uniones\`. They are **Autodesk content and are not in the repository**, so you must put them there yourself. The list of the 12 files is in [`codigo/familias_uniones/README.md`](../../codigo/familias_uniones/README.md).
+The installer carries whatever fallback fitting families are in `codigo\familias_uniones\`. They are **Autodesk content and are not in the repository**. Without them the installer is still created, but CAD-REV loses its last-resort fallback: in a project with no fitting families loaded, Revit does not create those fittings and the report says so. The list of the 12 files is in [`codigo/familias_uniones/README.md`](../../codigo/familias_uniones/README.md).
 
 **Automatic search.** `CREAR_INSTALADOR.cmd` looks for any missing families and copies them to `codigo\familias_uniones\`. It searches, in this order:
 1. the folder given with `-Familias <folder>`;

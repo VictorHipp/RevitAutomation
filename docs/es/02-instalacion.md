@@ -14,7 +14,7 @@ Resumen. Solo hay que escribir **un comando**, el del paso 2; todo lo demás es 
 | [2.1](#21-instalar-git) | Instalar Git | Descargarlo de la web y ejecutarlo |
 | [2.2](#22-descargar-el-repositorio) | Descargar el proyecto | `git clone https://github.com/VictorHipp/RevitAutomation.git` |
 | [2.3](#23-preparar-el-pc-sdk-de-net-10-y-8) | Instalar los SDK de .NET 10 y 8 | Doble clic en `codigo\PREPARAR_PC.cmd` |
-| [2.4](#24-conseguir-las-12-familias-de-uniones) | Poner las 12 familias de uniones | Copiarlas en `codigo\familias_uniones\` |
+| [2.4](#24-conseguir-las-12-familias-de-uniones) | Poner las 12 familias de uniones (recomendado) | Copiarlas en `codigo\familias_uniones\`, o dejar que `CREAR_INSTALADOR.cmd` las busque |
 | [2.5](#25-crear-el-instalador) | Crear el instalador | Doble clic en `codigo\CREAR_INSTALADOR.cmd` |
 | [2.6](#26-instalar-en-revit) | Instalar en Revit | Doble clic en `Instalar_RevitAutomation.exe` |
 
@@ -67,7 +67,7 @@ Notas:
 
 ### 2.4 Conseguir las 12 familias de uniones
 
-El instalador necesita las familias de uniones de reserva en `codigo\familias_uniones\`. **Son contenido de Autodesk y no están en el repositorio**, así que hay que ponerlas a mano. La lista de los 12 archivos está en [`codigo/familias_uniones/LEEME.md`](../../codigo/familias_uniones/LEEME.md).
+El instalador lleva las familias de uniones de reserva que haya en `codigo\familias_uniones\`. **Son contenido de Autodesk y no están en el repositorio**. Sin ellas el instalador se crea igualmente, pero CAD-REV pierde la reserva de último recurso: en un proyecto sin familias de uniones cargadas, Revit no crea esas uniones y lo indica en el informe. La lista de los 12 archivos está en [`codigo/familias_uniones/LEEME.md`](../../codigo/familias_uniones/LEEME.md).
 
 **Búsqueda automática.** `CREAR_INSTALADOR.cmd` busca las que falten y las copia a `codigo\familias_uniones\`. Busca, por este orden:
 1. en la carpeta indicada con `-Familias <carpeta>`;

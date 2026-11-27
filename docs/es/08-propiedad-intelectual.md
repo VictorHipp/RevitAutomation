@@ -26,7 +26,7 @@ Estos componentes **no** están cubiertos por la licencia de este proyecto; cada
 
 ## 8.3 Familias de Autodesk y el instalador
 
-Las 12 familias de uniones de reserva proceden de la biblioteca de contenido de Autodesk Revit. Están excluidas de este repositorio público (`.gitignore`) y hay que ponerlas en su equipo para generar el instalador (vea [`codigo/familias_uniones/LEEME.md`](../../codigo/familias_uniones/LEEME.md)).
+Las 12 familias de uniones de reserva proceden de la biblioteca de contenido de Autodesk Revit. Están excluidas de este repositorio público (`.gitignore`) y, para que vayan dentro del instalador, hay que ponerlas en su equipo o dejar que `CREAR_INSTALADOR.cmd` las encuentre en las bibliotecas de Revit instaladas (vea [`codigo/familias_uniones/LEEME.md`](../../codigo/familias_uniones/LEEME.md)).
 
 Como el `Instalar_RevitAutomation.exe` generado en su equipo lleva esas familias dentro, no lo publique (por ejemplo, como «Release» de GitHub) salvo que tenga derecho a redistribuirlas, o sustitúyalas antes por familias propias.
 

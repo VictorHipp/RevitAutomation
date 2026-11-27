@@ -45,7 +45,7 @@ Detailed design specifications and change history (Spanish only) live in [`codig
    ```
 
 3. In `RevitAutomation\codigo`, double-click **`PREPARAR_PC.cmd`**: it installs the .NET 10 and 8 SDKs.
-4. Copy the 12 fitting families into `codigo\familias_uniones\`.
+4. Recommended: copy the 12 fitting families into `codigo\familias_uniones\`. If they are missing, `CREAR_INSTALADOR.cmd` looks for them in the PC's Revit libraries (or in the folder given with `-Familias`) and, if it cannot find them, warns and creates the installer without them.
 5. Double-click **`CREAR_INSTALADOR.cmd`**: it creates `Instalar_RevitAutomation.exe` next to the `codigo` folder.
 6. Close Revit and double-click **`Instalar_RevitAutomation.exe`**.
 

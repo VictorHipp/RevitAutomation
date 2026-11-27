@@ -24,7 +24,7 @@ These components are **not** covered by this project's licence; each keeps its o
 
 ## 8.3 Autodesk families and the installer
 
-The 12 fallback fitting families come from the Autodesk Revit content library. They are excluded from this public repository (`.gitignore`), and you must supply them locally to build the installer (see [`codigo/familias_uniones/README.md`](../../codigo/familias_uniones/README.md)).
+The 12 fallback fitting families come from the Autodesk Revit content library. They are excluded from this public repository (`.gitignore`), and to have them inside the installer you must supply them locally or let `CREAR_INSTALADOR.cmd` find them in the installed Revit libraries (see [`codigo/familias_uniones/README.md`](../../codigo/familias_uniones/README.md)).
 
 Because a locally built `Instalar_RevitAutomation.exe` embeds those families, do not publish it (for example as a GitHub Release) unless you have the right to redistribute them, or replace them with families of your own.
 

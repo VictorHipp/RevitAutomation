@@ -304,7 +304,7 @@ if ($siguenFaltando.Count) {
 Write-Host ''
 Write-Host 'TODO LISTO.' -ForegroundColor Green
 if (-not $SoloDotnet) {
-    Write-Host 'Siguiente paso: ponga las 12 familias de uniones en la carpeta familias_uniones (Instalación, paso 2.4)'
-    Write-Host 'y haga doble clic en CREAR_INSTALADOR.cmd (paso 2.5).'
+    Write-Host 'Siguiente paso: si las tiene, ponga las 12 familias de uniones en la carpeta familias_uniones (Instalación, paso 2.4;'
+    Write-Host 'si faltan, CREAR_INSTALADOR las busca y avisa) y haga doble clic en CREAR_INSTALADOR.cmd (paso 2.5).'
 }
 exit 0
