@@ -27,6 +27,8 @@ If the drawing has layers or blocks the add-in does not recognise, a «¿Qué es
 - **Grilles, accessories, equipment:** at the elevation of their run.
 - **Other devices** use usual heights, flagged `SUPUESTO`: lighting 2700 mm (wall/emergency 2200), switches 1100, presence detectors 2700, sockets 300, panels 1500, extinguishers 1000, hose reels 1500, call points 1200, sirens 2300, signs 2100, fire detectors 2700.
 
+**Fittings and crossings.** Pipes: elbows, tees and reductions (four-way crosses are left for the technician). Ducts, cable trays and electrical conduits: elbows, tees, crosses and reductions. In drawings exported from Revit, a pipe cut where another passes is a crossing at a different level: it is modelled straight and unjoined, and the report says so. Risers drawn as circles take the diameter of their pipe; a circle smaller than its pipe with no SUBE or BAJA label nearby is not modelled and appears in the report as «REVISAR».
+
 ## 3.4 Slopes
 
 Draw the slope as text (`2 %`, `i=1,5 %`, `2 ‰`…) with an arrow pointing downhill. Arrows made of lines, triangles, hatches, variable-width polylines, leaders and blocks are recognised. A label applies to the whole run up to the next tee or cross. Without a valid label, or with ties or conflicting votes, the run stays horizontal and the report says what to check and where.

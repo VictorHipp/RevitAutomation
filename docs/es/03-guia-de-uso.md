@@ -27,6 +27,8 @@ Si el plano tiene capas o bloques que el programa no reconoce, la ventana «¿Qu
 - **Rejillas, accesorios y equipos:** a la cota de su red.
 - **Resto de dispositivos:** alturas habituales marcadas `SUPUESTO`: luminarias 2700 mm (apliques y emergencias 2200), interruptores 1100, detectores de presencia 2700, tomas 300, cuadros 1500, extintores 1000, BIE 1500, pulsadores 1200, sirenas 2300, señales 2100, detectores de incendio 2700.
 
+**Uniones y cruces.** Tuberías: codos, tes y reducciones (las cruces de cuatro tubos quedan para el técnico). Conductos, bandejas y tubos eléctricos: codos, tes, cruces y reducciones. En los planos exportados de Revit, un tubo cortado donde pasa otro es un cruce a distinta cota: se modela recto y sin unir, y el informe lo dice. Las bajantes dibujadas con círculos toman el diámetro de su tubo; un círculo más pequeño que su tubo sin rótulo SUBE o BAJA cerca no se modela y aparece en el informe como «REVISAR».
+
 ## 3.4 Pendientes
 
 Dibuje la pendiente con texto (`2 %`, `i=1,5 %`, `2 ‰`…) y una flecha hacia donde baja el agua. Se reconocen flechas de líneas, triángulos, rellenos, polilíneas de ancho variable, directrices y bloques. Una etiqueta vale para todo el recorrido hasta la siguiente te o cruz. Sin etiqueta válida, o con empates o votos contrarios, el recorrido queda horizontal y el informe dice qué revisar y dónde.

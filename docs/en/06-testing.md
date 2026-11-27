@@ -27,6 +27,7 @@ Pass a scratch folder under `obj` so generated DWG/DXF files and slope reports d
 | `TrayTests.cs` | Cable-tray fittings |
 | `NetworkFittingTests.cs` | Fittings, gaps and accessories |
 | `CeilingTests.cs` | Ceiling-following profile |
+| `PipeOutlineTests.cs` | Double-line pipes exported from Revit (crossings, end-cap remnants, edge pairs, drawn fitting bodies) and risers drawn as circles |
 
 Fixtures: `codigo/samples/*.dxf` (synthetic tray/pipe/duct fitting cases) and `codigo/ejemplos/**` (synthetic slope and riser cases). The suite also generates its own CAD fixtures. Last recorded result: **382 checks passed, 0 failed** (25-11-2026).
 

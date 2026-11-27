@@ -27,6 +27,7 @@ Pase una carpeta temporal dentro de `obj` para que los DWG/DXF y los informes de
 | `TrayTests.cs` | Uniones de bandeja |
 | `NetworkFittingTests.cs` | Uniones, huecos y accesorios |
 | `CeilingTests.cs` | Perfil «sigue el techo» |
+| `PipeOutlineTests.cs` | Tuberías a doble línea exportadas de Revit (cruces, restos de testa, parejas de bordes, cuerpos de pieza) y bajantes dibujadas con círculos |
 
 Datos de prueba: `codigo/samples/*.dxf` (casos sintéticos de uniones de bandeja, tubería y conducto) y `codigo/ejemplos/**` (casos sintéticos de pendientes y bajantes). Las pruebas también generan sus propios planos. Último resultado registrado: **382 comprobaciones superadas, 0 fallidas** (25-11-2026).
 
