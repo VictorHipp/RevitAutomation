@@ -66,7 +66,7 @@ public static partial class MepBuilder
                     FamilyInstance? piece = null;
                     var actualKind = joint.Kind;
                     bool recheckSize = (actualKind is JunctionKind.EnLinea or JunctionKind.Transicion) &&
-                        (kind is MepKind.Tuberia or MepKind.Conducto);
+                        (kind is MepKind.Tuberia or MepKind.Conducto or MepKind.TuboElectrico);
                     if (recheckSize)
                         actualKind = SameConnectorSize(c[0]!, c[1]!) ? JunctionKind.EnLinea : JunctionKind.Transicion;
                     evaluated = actualKind;

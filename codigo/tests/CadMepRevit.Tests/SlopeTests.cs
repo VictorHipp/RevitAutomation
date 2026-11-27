@@ -194,8 +194,10 @@ public static class SlopeTests
             !ModelScopes.AllowsFitting(ModelScope.Tuberias, MepKind.Tuberia, JunctionKind.Cruz) &&
             ModelScopes.AllowsFitting(ModelScope.Conductos, MepKind.Conducto, JunctionKind.Cruz) &&
             ModelScopes.AllowsFitting(ModelScope.Bandejas, MepKind.Bandeja, JunctionKind.Te) &&
-            !ModelScopes.AllowsAnyFitting(ModelScope.Bandejas, MepKind.TuboElectrico),
-            "Plan: tuberías con codos sin cruces, conductos con cruces, bandejas con tes y tubos eléctricos sin uniones");
+            new[] { JunctionKind.Codo, JunctionKind.Te, JunctionKind.Cruz, JunctionKind.Transicion }
+                .All(j => ModelScopes.AllowsFitting(ModelScope.Bandejas, MepKind.TuboElectrico, j)) &&
+            !ModelScopes.AllowsAnyFitting(ModelScope.Tuberias, MepKind.TuboElectrico),
+            "Plan: tuberías con codos sin cruces, conductos con cruces, bandejas con tes y tubos eléctricos (en Bandejas) con codos, tes, cruces y reducciones");
         var mixed = new SlopeAssociation();
         mixed.Labels.Add(Vote(l.Segments[0], P0(1, 0), .01)); mixed.Labels.Add(Vote(l.Segments[1], P0(0, 1), .03));
         var mixedResult = SlopeSolver.Solve(l.Segments, mixed, 10);

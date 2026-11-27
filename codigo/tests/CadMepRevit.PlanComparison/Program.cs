@@ -154,8 +154,10 @@ if (args is ["compare", var beforeFile, var afterFile])
             Require(x.Configuration == y.Configuration, $"{key}, configuración de '{layer}'");
             Require(y.Joints.Where(j => j.Fitting).All(j => ModelScopes.AllowsFitting(scope, y.Kind, j.Kind)),
                 $"{key}, uniones permitidas de '{layer}'");
-            if (y.Kind == MepKind.TuboElectrico ||
-                y.Kind == MepKind.Bandeja && y.Gaps.All(g => !g.Closed))
+            // Tubos eléctricos: desde el 27-11-2026 llevan uniones; sus encuentros (la geometría) no deben cambiar.
+            if (y.Kind == MepKind.TuboElectrico)
+                Require(x.Junctions == y.Junctions, $"{key}, encuentros de '{layer}'");
+            else if (y.Kind == MepKind.Bandeja && y.Gaps.All(g => !g.Closed))
                 Require(x.Junctions == y.Junctions && x.PlannedFittings == y.PlannedFittings, $"{key}, uniones de '{layer}'");
             int affected = CompareSegments(key, layer, x, y, Require);
             if (affected > 0 || x.Fittings != y.Fittings || x.Encounters != y.Encounters)
@@ -183,8 +185,8 @@ if (args is ["compare", var beforeFile, var afterFile])
     }
     var trays = after["[sintético] bandejas_uniones.dxf | Bandejas"].Layers;
     Require(trays.Values.Where(l => l.Kind == MepKind.Bandeja).Sum(l => l.Fittings) == 5, "DXF sintético: 5 uniones de bandeja");
-    Require(trays.Values.Single(l => l.Kind == MepKind.TuboElectrico) is { Segments.Length: 5, Encounters: 2, Fittings: 0 },
-        "DXF sintético: 5 tramos y 2 encuentros de tubo eléctrico, cero uniones planificadas");
+    Require(trays.Values.Single(l => l.Kind == MepKind.TuboElectrico) is { Segments.Length: 5, Encounters: 2, Fittings: 2 },
+        "DXF sintético: 5 tramos y 2 encuentros de tubo eléctrico, con sus 2 uniones (codo y te) planificadas");
     Console.WriteLine($"{after.Count} combinaciones. " + (failures == 0 ? "RESULTADO: solo las diferencias previstas." : $"RESULTADO: {failures} discrepancias."));
     return failures == 0 ? 0 : 1;
 }

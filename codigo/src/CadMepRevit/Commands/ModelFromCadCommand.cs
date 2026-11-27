@@ -554,7 +554,7 @@ public sealed class ModelPipesCommand : ModelFromCadCommand { protected override
 [Regeneration(RegenerationOption.Manual)]
 public sealed class ModelDuctsCommand : ModelFromCadCommand { protected override ModelScope? Scope => ModelScope.Conductos; }
 
-/// <summary>Botón «Bandejas»: bandejas de cables con uniones y tubos eléctricos rectos.</summary>
+/// <summary>Botón «Bandejas»: bandejas de cables y tubos eléctricos, los dos con codos, tes, cruces y reducciones.</summary>
 [Transaction(TransactionMode.Manual)]
 [Regeneration(RegenerationOption.Manual)]
 public sealed class ModelTraysCommand : ModelFromCadCommand { protected override ModelScope? Scope => ModelScope.Bandejas; }

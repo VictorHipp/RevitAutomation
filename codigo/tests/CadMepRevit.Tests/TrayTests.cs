@@ -47,5 +47,11 @@ static class TrayTests
             check(match is not null && match.Ordered.All(e => network.Segments[e.Segment].Length >= 2000),
                 $"DXF: {kind} en '{layer}' en {point}, con tramos de al menos 2 m");
         }
+        // Tubos eléctricos (27-11-2026): sus encuentros llevan pieza en el botón Bandejas, igual que las bandejas.
+        var conduits = network.Junctions.Where(j => MepKinds.Suggest(j.Layer) == MepKind.TuboElectrico).ToList();
+        check(conduits.Any(j => j.Kind == JunctionKind.Codo) && conduits.Any(j => j.Kind == JunctionKind.Te) &&
+              conduits.Where(j => j.Kind != JunctionKind.EnLinea)
+                  .All(j => ModelScopes.AllowsFitting(ModelScope.Bandejas, MepKind.TuboElectrico, j.Kind)),
+            "DXF: el codo y la te del tubo eléctrico se crean con el botón Bandejas");
     }
 }

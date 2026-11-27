@@ -22,8 +22,8 @@ public static class ModelScopes
     {
         if (joint is not (JunctionKind.Codo or JunctionKind.Te or JunctionKind.Cruz or JunctionKind.Transicion)) return false;
         if (scope is null) return kind is MepKind.Tuberia or MepKind.Conducto or MepKind.Bandeja or MepKind.TuboElectrico;
-        return Includes(scope.Value, kind) && kind != MepKind.TuboElectrico &&
-            !(kind == MepKind.Tuberia && joint == JunctionKind.Cruz);
+        // Tubos eléctricos (botón Bandejas): codos, tes, cruces y reducciones, como las bandejas (decisión del 27-11-2026).
+        return Includes(scope.Value, kind) && !(kind == MepKind.Tuberia && joint == JunctionKind.Cruz);
     }
 
     public static bool AllowsAnyFitting(ModelScope? scope, MepKind kind) => AllowsFitting(scope, kind, JunctionKind.Codo);
