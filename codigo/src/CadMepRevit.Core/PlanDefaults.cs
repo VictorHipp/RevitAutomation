@@ -14,6 +14,11 @@ public static class PlanDefaults
     public const double AssumedStoreyMm = 3000;
     public const double CircleCenterAllowanceMm = 5;
     public const double RiserDirectionLabelMm = 1500;
+    /// <summary>
+    /// Un círculo cuyo diámetro es menor que esta fracción del ancho dibujado de su tubo no se toma como bajante salvo que
+    /// tenga un rótulo SUBE/BAJA cerca (símbolos de llaves o puntos sobre el tubo). Se lista en el informe.
+    /// </summary>
+    public const double SmallRiserCircleFraction = 0.8;
     public const double PipeSystemLabelMm = 1000;
     public const double AssumedChamberDepthMm = 600;
     public const double AssumedManholeDepthMm = 1500;

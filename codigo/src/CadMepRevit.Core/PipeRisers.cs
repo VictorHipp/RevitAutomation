@@ -15,6 +15,12 @@ public sealed class RiserPlan
 {
     public List<PipeRiser> Risers { get; } = new();
     public Dictionary<int, string> Discarded { get; } = new();
+    /// <summary>
+    /// Círculos más pequeños que el tubo sobre el que están dibujados y sin rótulo SUBE/BAJA cerca: pueden ser un símbolo
+    /// (llave, punto) o una bajante sin rotular. No se modelan y el informe los lista para revisarlos (decisión del
+    /// usuario, 27-11-2026). Centro en mm, como las uniones.
+    /// </summary>
+    public List<(string Layer, P3 Center, double CircleMm, double PipeMm)> SmallUnlabeled { get; } = new();
 }
 
 public static class PipeRisers
@@ -29,6 +35,8 @@ public static class PipeRisers
     {
         var result = new RiserPlan();
         var limits = OutlineDetector.Settings.ForPipes(k, tol);
+        var circles = new Dictionary<int, CadCircle>();
+        foreach (var c in drawing.Circles) circles[c.EntityIndex] = c;
         double join = tol + PlanDefaults.CircleCenterAllowanceMm;
         var services = layers.Concat(pipes.Select(p => p.Layer)).Distinct(StringComparer.OrdinalIgnoreCase)
             .ToDictionary(l => l, PipeNetworks.Recognize, StringComparer.OrdinalIgnoreCase);
@@ -122,6 +130,24 @@ public static class PipeRisers
             }
             var direction = directions.Select(d => (d.Text, d.Up, Dist: d.Site.DistanceTo(center)))
                 .Where(d => d.Dist <= PlanDefaults.RiserDirectionLabelMm).OrderBy(d => d.Dist).FirstOrDefault();
+            // Diámetro de la vertical: de los círculos del grupo, el que más se parece al ancho dibujado de su tubo. Revit dibuja
+            // la bajante con un círculo de su diámetro y otro de la mitad, tangente por dentro; antes se tomaba el menor y
+            // salían verticales de Ø12,5 en tubos de Ø25. Sin tubo dibujado a doble línea, el menor (como antes).
+            double diameter = outer;
+            if (nearest.Pipe?.WidthMm is double drawn)
+                diameter = entities.Where(circles.ContainsKey).Select(e => 2 * circles[e].Radius * k)
+                    .OrderBy(d => Math.Abs(d - drawn)).DefaultIfEmpty(outer).First();
+            // Círculo más pequeño que el tubo sobre el que está dibujado: sin rótulo SUBE/BAJA cerca no se sabe si es una
+            // bajante o un símbolo: no se modela y se lista en el informe (decisión del usuario).
+            if (direction.Text is null && nearest.Pipe?.WidthMm is double pipeWidth &&
+                diameter < PlanDefaults.SmallRiserCircleFraction * pipeWidth)
+            {
+                foreach (int e in entities)
+                    result.Discarded[e] = "círculo más pequeño que el tubo sobre el que está dibujado y sin rótulo SUBE/BAJA cerca " +
+                                          "(símbolo o bajante sin rotular): no se modela; vea la lista de abajo";
+                result.SmallUnlabeled.Add((layer, center, diameter, pipeWidth));
+                continue;
+            }
             bool up = direction.Text is not null ? direction.Up : buried || layerHanging || documentHanging || !fixtures;
             string reason = direction.Text is not null ? $"rótulo «{direction.Text}»" : buried ? "red enterrada" :
                 layerHanging || documentHanging ? "red colgada" : fixtures ? "planta con aparatos" : "red colgada por defecto";
@@ -137,7 +163,7 @@ public static class PipeRisers
                 : localReference is not null ? "; base en referencia de la red más próxima de su capa" : "; base en referencia por defecto";
             labels.Decisions.TryGetValue(targets[i].Id, out var size);
             double? nominal = IsDiameterLabel(size) ? size!.ValueMm : null;
-            result.Risers.Add(new PipeRiser(layer, center, at, new P3(at.X, at.Y, target), outer, nominal, nearest.Pipe?.Index, along, entities, reason));
+            result.Risers.Add(new PipeRiser(layer, center, at, new P3(at.X, at.Y, target), diameter, nominal, nearest.Pipe?.Index, along, entities, reason));
         }
         return result;
     }

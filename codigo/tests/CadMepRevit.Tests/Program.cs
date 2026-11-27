@@ -648,6 +648,7 @@ LuminaireTests.Run(Check, Path.Combine(samplesDir, "luminarias"));
 PlacementTests.Run(Check);
 TrayTests.Run(Check);
 NetworkFittingTests.Run(Check);
+PipeOutlineTests.Run(Check);
 CeilingTests.Run(Check);
 string? slopePlans = Environment.GetEnvironmentVariable("CADMEP_PRUEBAS") ?? Environment.GetEnvironmentVariable("CADMEP_PLANOS");
 if (!string.IsNullOrWhiteSpace(slopePlans) && Directory.Exists(slopePlans))

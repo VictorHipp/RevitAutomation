@@ -28,6 +28,13 @@ public sealed class OutlineResult
     public int CrossedSymbols { get; internal set; }
     /// <summary>Cuerdas de curvas (codos dibujados con arcos) que no se emparejan: el codo se cierra prolongando los tramos.</summary>
     public int CurvedElbowChords { get; internal set; }
+    /// <summary>Líneas descartadas por ser más cortas que el mínimo (restos de testas o de piezas): no son bordes.</summary>
+    public int TinyLines { get; internal set; }
+    /// <summary>
+    /// Tramos cortados en el dibujo justo donde los cruza otro (el plano oculta el de debajo): se unen en línea recta y NO
+    /// se unen al que pasa por encima. Puntos del cruce en mm del plano.
+    /// </summary>
+    public List<P3> CrossingsJoined { get; } = new();
 }
 
 /// <summary>
@@ -78,13 +85,35 @@ public static class OutlineDetector
         public bool CloseDrawnArcElbows { get; init; }
 
         /// <summary>
+        /// Líneas más cortas que esto (mm) no son bordes y se descartan antes de emparejar (0 = solo la tolerancia). En los
+        /// planos exportados de Revit quedan trocitos de testa o de pieza de 0,5–4 mm que rompían el emparejado: tramos
+        /// fantasma entre dos tubos vecinos y tubos partidos o duplicados.
+        /// </summary>
+        public double MinLineMm { get; init; }
+
+        /// <summary>
+        /// Tuberías: el plano corta el tubo de debajo donde lo cruza otro (hueco del ancho del que pasa). Esos dos trozos,
+        /// alineados y del mismo ancho, se unen en línea recta antes de buscar codos o tes, en vez de unirse al que pasa
+        /// (daba una cruz o dos tes que no existen). Y al cerrar un hueco no se arrastra el extremo de otro tramo que tiene
+        /// su propia esquina más cerca. En conductos, bandejas y muros no: un ramal enfrentado a otro sí es una cruz.
+        /// </summary>
+        public bool PipeCrossings { get; init; }
+
+        /// <summary>
+        /// Tuberías: dos bordes emparejados siguen siendo pareja mientras continúen los dos (ver KeptPairs en Detect).
+        /// </summary>
+        public bool KeepPairs { get; init; }
+
+        /// <summary>
         /// Tuberías y tubos dibujados con sus dos bordes (planos exportados de Revit): de 6 a 400 mm de diámetro.
         /// Los codos y tes dibujados como bloque dejan huecos mayores que el propio diámetro (hasta 4 veces).
         /// </summary>
         public static Settings ForPipes(double unitToMm, double toleranceMm) => new()
         {
             UnitToMm = unitToMm, ToleranceMm = Math.Min(toleranceMm, 3), MinWidthMm = 10, MaxWidthMm = 400,
-            GapFactor = 4, MaxGapMm = 400, CleanDrawing = false
+            GapFactor = 4, MaxGapMm = 400, CleanDrawing = false,
+            // Un borde de tubo nunca mide menos que medio diámetro mínimo.
+            MinLineMm = 5, PipeCrossings = true, KeepPairs = true
         };
 
         /// <summary>Ajustes típicos para muros de arquitectura.</summary>
@@ -147,6 +176,7 @@ public static class OutlineDetector
             if (s.CleanDrawing && c.ArcId != 0) { result.CurvedElbowChords++; continue; }
             P3 a = Local(c.Start), b = Local(c.End);
             if (a.DistanceTo(b) <= tol) continue;
+            if (a.DistanceTo(b) < s.MinLineMm) { result.TinyLines++; continue; }
             double th = Math.Atan2(b.Y - a.Y, b.X - a.X);
             if (th < 0) th += Math.PI;
             if (th >= Math.PI) th -= Math.PI;
@@ -273,6 +303,35 @@ public static class OutlineDetector
             return res;
         }
 
+        // Tuberías: las parejas siguen. Dos bordes que ya formaban un tubo en el intervalo anterior siguen siendo pareja
+        // mientras los dos continúen, aunque aparezca o desaparezca otra línea entre medias o al lado. Antes, el
+        // emparejamiento 1ª-2ª, 3ª-4ª se rehacía en cada intervalo con TODAS las líneas paralelas del plano: un borde
+        // cortado (por un cruce o una pieza) desplazaba la cuenta y salían tubos fantasma entre bordes de tubos distintos.
+        // Las líneas sueltas se emparejan entre sí como siempre, pero nunca por encima de un tubo ya formado.
+        List<(int P, int Q, List<int> Skipped)> KeptPairs(List<int> act, ICollection<(int A, int B)> previous)
+        {
+            var pos = new Dictionary<int, int>();
+            for (int i = 0; i < act.Count; i++) pos[act[i]] = i;
+            var res = new List<(int, int, List<int>)>();
+            var used = new HashSet<int>();
+            foreach (var (a, b) in previous)
+            {
+                if (!pos.ContainsKey(a) || !pos.ContainsKey(b) || used.Contains(a) || used.Contains(b)) continue;
+                res.Add((a, b, new List<int>()));
+                used.Add(a); used.Add(b);
+            }
+            var rest = act.Where(i => !used.Contains(i)).ToList();
+            for (int q = 0; q + 1 < rest.Count;)
+            {
+                int a = rest[q], b = rest[q + 1];
+                double w = lines[b].C - lines[a].C;
+                bool over = pos[b] - pos[a] > 1; // entre las dos queda un borde de otro tubo ya emparejado
+                if (w >= s.MinWidthMm && w <= s.MaxWidthMm && !over) { res.Add((a, b, new List<int>())); q += 2; }
+                else q++;
+            }
+            return res;
+        }
+
         List<(int P, int Q, List<int> Skipped)> BestPairs(List<int> act, double u0, double v0)
         {
             int m = act.Count;
@@ -355,7 +414,9 @@ public static class OutlineDetector
                 var active = idx.Where(i => lines[i].T0 <= u + tol && lines[i].T1 >= v - tol)
                                 .OrderBy(i => lines[i].C).ToList();
                 var now = new HashSet<(int, int)>();
-                foreach (var (p, q, skipped) in s.CleanDrawing ? BestPairs(active, u, v) : ConsecutivePairs(active))
+                var pairsHere = s.CleanDrawing ? BestPairs(active, u, v)
+                    : s.KeepPairs ? KeptPairs(active, open.Keys.ToList()) : ConsecutivePairs(active);
+                foreach (var (p, q, skipped) in pairsHere)
                 {
                     var key = (p, q);
                     now.Add(key);
@@ -440,6 +501,8 @@ public static class OutlineDetector
 
         if (s.CloseDrawnArcElbows) CloseArcElbows(axes, segs, Local, s, tol, result);
         CloseGaps(axes, s, tol, result);
+        for (int i = 0; i < result.CrossingsJoined.Count; i++)
+            result.CrossingsJoined[i] = result.CrossingsJoined[i] + origin; // a mm del plano
 
         // 6) Restos sin sentido: tramos más cortos que la cuarta parte de su ancho
         foreach (var a in axes)
@@ -681,12 +744,99 @@ public static class OutlineDetector
     }
 
     /// <summary>
+    /// Cruce de tuberías a distinta cota: el plano corta el tubo de debajo justo lo que tapa el de encima. Dos extremos
+    /// libres alineados, enfrentados y del mismo ancho, con un hueco del ancho de otro eje que pasa de largo por en medio
+    /// (sigue a los dos lados), son el MISMO tubo: se unen en un eje recto y no se unen al que pasa.
+    /// </summary>
+    private static void JoinAcrossCrossings(List<Axis> axes, double tol, OutlineResult result)
+    {
+        double parallelCos = Math.Cos(5 * Math.PI / 180);
+        // Parejas de extremos libres alineados, enfrentados y del mismo ancho: el tramo cortado a ambos lados de un hueco.
+        var aligned = new List<(double Gap, int A, bool AS, int B, bool BS, P3 Pa, P3 Pb, P3 Dir, double W)>();
+        for (int i = 0; i < axes.Count; i++)
+        for (int j = i + 1; j < axes.Count; j++)
+        foreach (bool aS in new[] { true, false })
+        foreach (bool bS in new[] { true, false })
+        {
+            Axis a = axes[i], b = axes[j];
+            if ((aS ? !a.FreeS : !a.FreeE) || (bS ? !b.FreeS : !b.FreeE)) continue;
+            if (Math.Abs(a.W - b.W) > Math.Max(tol, 0.1 * Math.Min(a.W, b.W))) continue;
+            var pa = aS ? a.S : a.E; var pb = bS ? b.S : b.E;
+            var da = aS ? a.Dir * -1 : a.Dir; var dbo = bS ? b.Dir * -1 : b.Dir;
+            if (da.Dot(dbo) > -parallelCos) continue;
+            var v = pb - pa;
+            double gap = v.Dot(da);
+            double lateral = Math.Abs(v.X * da.Y - v.Y * da.X);
+            if (gap <= tol || gap > 400 || lateral > Math.Max(tol, 0.05 * Math.Min(a.W, b.W))) continue;
+            aligned.Add((gap, i, aS, j, bS, pa, pb, da, (a.W + b.W) / 2));
+        }
+        double Room(double w) => w + Math.Max(4 * tol, 0.5 * w); // lo que puede tapar un tubo de ese ancho (con su junta)
+        var pairs = new List<(double Gap, int A, bool AS, int B, bool BS, P3 X)>();
+        for (int n = 0; n < aligned.Count; n++)
+        {
+            var (gap, i, aS, j, bS, pa, _, da, wAB) = aligned[n];
+            bool found = false;
+            // a) Otro eje pasa de largo por el hueco (sigue a los dos lados) y su ancho es lo que mide el hueco.
+            for (int c = 0; c < axes.Count && !found; c++)
+            {
+                if (c == i || c == j) continue;
+                var x = axes[c];
+                var dx = x.Dir;
+                double cross = da.X * dx.Y - da.Y * dx.X;
+                if (Math.Abs(da.Dot(dx)) > parallelCos || Math.Abs(cross) < 1e-9) continue;
+                var w = x.S - pa;
+                double ta = (w.X * dx.Y - w.Y * dx.X) / cross;   // dentro del hueco, desde el extremo a
+                double tx = (w.X * da.Y - w.Y * da.X) / cross;   // a lo largo del que pasa, desde su inicio
+                if (ta < -tol || ta > gap + tol) continue;
+                // Pasa de largo: no termina en el hueco (si terminara sería un ramal, no un cruce).
+                double margin = x.W / 2 + tol;
+                if (tx < margin || tx > x.Len - margin) continue;
+                if (gap < x.W - 2 * tol || gap > Room(x.W)) continue;
+                pairs.Add((gap, i, aS, j, bS, pa + da * ta));
+                found = true;
+            }
+            // b) Corte mutuo: el otro tubo también está cortado justo ahí (sus dos huecos se cruzan). Se unen los dos.
+            for (int m = 0; m < aligned.Count && !found; m++)
+            {
+                if (m == n) continue;
+                var o = aligned[m];
+                if (o.A == i || o.A == j || o.B == i || o.B == j) continue;
+                double cross = da.X * o.Dir.Y - da.Y * o.Dir.X;
+                if (Math.Abs(da.Dot(o.Dir)) > parallelCos || Math.Abs(cross) < 1e-9) continue;
+                var w = o.Pa - pa;
+                double ta = (w.X * o.Dir.Y - w.Y * o.Dir.X) / cross;
+                double to = (w.X * da.Y - w.Y * da.X) / cross;
+                if (ta < -tol || ta > gap + tol || to < -tol || to > o.Gap + tol) continue;
+                if (gap > Room(o.W) || o.Gap > Room(wAB)) continue;
+                pairs.Add((gap, i, aS, j, bS, pa + da * ta));
+                found = true;
+            }
+        }
+        var dead = new HashSet<int>();
+        foreach (var (_, i, aS, j, bS, point) in pairs.OrderBy(p => p.Gap))
+        {
+            if (dead.Contains(i) || dead.Contains(j)) continue;
+            Axis a = axes[i], b = axes[j];
+            if ((aS ? !a.FreeS : !a.FreeE) || (bS ? !b.FreeS : !b.FreeE)) continue;
+            var farA = aS ? a.E : a.S; bool farAFree = aS ? a.FreeE : a.FreeS;
+            var farB = bS ? b.E : b.S; bool farBFree = bS ? b.FreeE : b.FreeS;
+            a.S = farA; a.FreeS = farAFree;
+            a.E = farB; a.FreeE = farBFree;
+            a.W = (a.W + b.W) / 2; a.Z = (a.Z + b.Z) / 2;
+            dead.Add(j);
+            result.CrossingsJoined.Add(point);
+        }
+        foreach (int d in dead.OrderByDescending(d => d)) axes.RemoveAt(d);
+    }
+
+    /// <summary>
     /// Prolonga los extremos libres hasta donde se cortan con otro eje (codo, te, cruz)
     /// o con el extremo alineado de enfrente (transición, accesorio en línea).
     /// </summary>
     private static void CloseGaps(List<Axis> axes, Settings s, double tol, OutlineResult result)
     {
         double parallelCos = Math.Cos(5 * Math.PI / 180);
+        if (s.PipeCrossings) JoinAcrossCrossings(axes, tol, result);
         var candidates = new List<(double Dist, int Axis, bool AtS, P3 P)>();
         for (int i = 0; i < axes.Count; i++)
         {
@@ -694,6 +844,10 @@ public static class OutlineDetector
             {
                 if (atS ? !axes[i].FreeS : !axes[i].FreeE) continue;
                 var a = axes[i];
+                // Tuberías: un trozo más corto que 3/4 de su ancho es el cuerpo de una pieza dibujada con líneas (una te, una
+                // válvula) leído de través, no un tubo: no sale a buscar uniones por sí mismo (se alargaba hasta otro tubo
+                // que pasa al lado y salían una cruz y una te inexistentes). Los demás sí pueden llegar hasta él.
+                if (s.PipeCrossings && a.Len < 0.75 * a.W) continue;
                 var p = atS ? a.S : a.E;
                 var dir = atS ? a.Dir * -1 : a.Dir;
                 double gap = Gap(a, s);
@@ -717,6 +871,11 @@ public static class OutlineDetector
                 }
             }
         }
+
+        // Distancia a la esquina más cercana de cada extremo libre: no se le arrastra hasta otra más lejana.
+        var nearest = new Dictionary<(int, bool), double>();
+        foreach (var (dist, i, atS, _) in candidates)
+            if (!nearest.TryGetValue((i, atS), out var d0) || dist < d0) nearest[(i, atS)] = dist;
 
         foreach (var (_, i, atS, pt) in candidates.OrderBy(c => c.Dist))
         {
@@ -743,6 +902,7 @@ public static class OutlineDetector
                     double along = v.Dot(dir);
                     double lateral = Math.Abs(v.X * dir.Y - v.Y * dir.X);
                     if (along < -tol || along > Gap(c, s) || lateral > Math.Max(tol, 0.05 * c.W)) continue;
+                    if (s.PipeCrossings && nearest.TryGetValue((j, cs), out var own) && own < along - tol) continue;
                     var target = p + dir * along; // se mantiene sobre su propio eje
                     if (cs) { c.S = target; c.FreeS = false; } else { c.E = target; c.FreeE = false; }
                     result.GapsClosed++;

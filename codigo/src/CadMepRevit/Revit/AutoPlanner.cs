@@ -306,6 +306,16 @@ public static class AutoPlanner
                                      $"{plan.Network.CoaxialResolved} tramos leídos dos veces (el tubo y, por fuera, la pieza o el aislamiento) quedan en uno; " +
                                      $"{plan.Network.StubsAbsorbed} trocitos cortos de otro ancho toman el de su tubo. " +
                                      "Donde el plano dibuja un bloque de transición o reductor, el cambio de ancho se respeta.");
+        // Tuberías a doble línea: cruces que el plano dibuja cortando el tubo de debajo, y restos de testa descartados.
+        var crossings = plan.Outlines.Values.SelectMany(o => o.CrossingsJoined).ToList();
+        int tinyLines = plan.Outlines.Values.Sum(o => o.TinyLines);
+        if (crossings.Count > 0)
+            res.DefaultDecisions.Add($"Cruces de tuberías: {crossings.Count} tubos cortados en el plano donde pasa otro se modelan rectos y SIN unir " +
+                                     "al que pasa (el plano oculta el de debajo: van a distinta cota). Si en alguno sí hay unión, póngala a mano. " +
+                                     "Ejemplos (mm, como las uniones): " + string.Join("; ", crossings.Take(5).Select(p => p + translation)
+                                         .Select(p => $"({p.X:0}, {p.Y:0})")) + ".");
+        if (tinyLines > 0)
+            res.DefaultDecisions.Add($"Doble línea: {tinyLines} líneas de menos de 5 mm (restos de testas o de piezas) no se toman como bordes de tubo.");
         foreach (var b in drawing.Blocks.Where(b => plan.BlockPlans.Any(p => BuildPlan.Same(p, b))))
         {
             var pos = new P3(b.Position.X * k, b.Position.Y * k, PlanDefaults.UseCadZ ? b.Position.Z * k : 0) + translation;

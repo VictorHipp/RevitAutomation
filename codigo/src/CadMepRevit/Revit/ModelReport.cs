@@ -91,6 +91,9 @@ public static class ModelReport
                 if (nested > 0) sb.AppendLine($"  Círculos dentro de bloques excluidos: {nested}.");
                 foreach (var group in risers.Discarded.Values.GroupBy(r => r))
                     sb.AppendLine($"  {group.Count()} descartados: {group.Key}.");
+                foreach (var (layer, center, circle, pipe) in risers.SmallUnlabeled)
+                    sb.AppendLine($"  REVISAR '{layer}', {PipeNetworks.InPlan(center)} mm: círculo de Ø{circle:0.#} mm sobre un tubo de Ø{pipe:0.#} mm, " +
+                                  "sin rótulo SUBE/BAJA: no se ha modelado. Si es una bajante o un montante, rotule SUBE o BAJA junto a él y repita.");
                 foreach (var (index, r) in plan.RisersBySegment)
                 {
                     var pipe = verticalsMade.TryGetValue(index, out var id) ? doc.GetElement(id) as Autodesk.Revit.DB.Plumbing.Pipe : null;
