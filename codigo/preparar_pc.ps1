@@ -1,6 +1,10 @@
 ﻿# Prepara un PC para compilar RevitAutomation: instala lo que falte de
 #   - SDK de .NET 10 (Revit 2027, el instalador y las versiones 2023/2024 con .NET Framework 4.8),
 #   - SDK de .NET 8 (Revit 2025/2026 y las pruebas del motor),
+#   - .NET Framework 4.8 (runtime): con él funcionan Revit 2023/2024 y el instalador. Viene con Windows 10 (1903 o
+#     posterior) y Windows 11; solo se instala si falta,
+#   - Developer Pack de .NET Framework 4.8 (ensamblados de referencia de 4.8): para compilar 2023/2024 sin depender
+#     del paquete de NuGet que, si no está, descarga el SDK,
 #   - Git para Windows (descargar y actualizar el repositorio),
 #   - GitHub CLI, solo si la persona va a desarrollar (se pregunta).
 # Lo ya instalado se salta. Usa winget si está disponible; si no, descarga el instalador oficial desde su enlace
@@ -26,6 +30,16 @@ $herramientas = [ordered]@{
     sdk8  = @{ Nombre = 'SDK de .NET 8'; Winget = 'Microsoft.DotNet.SDK.8'; Firma = 'Microsoft Corporation'
                Url = 'https://aka.ms/dotnet/8.0/dotnet-sdk-win-x64.exe'; Argumentos = '/install /quiet /norestart'
                Manual = 'https://dotnet.microsoft.com/download/dotnet/8.0' }
+    # winget solo tiene el runtime 4.8.1, que no admite las versiones antiguas de Windows 10 (justo las que pueden no
+    # traer el 4.8): se descarga el instalador sin conexión oficial del 4.8.
+    net48 = @{ Nombre = '.NET Framework 4.8 (runtime)'; Firma = 'Microsoft Corporation'
+               Url = 'https://go.microsoft.com/fwlink/?linkid=2088631'; Descarga = 'NDP48-x86-x64-AllOS-ENU.exe'
+               Argumentos = '/q /norestart'; Manual = 'https://dotnet.microsoft.com/download/dotnet-framework/net48' }
+    # Tiene que ser el Developer Pack 4.8: el 4.8.1 trae los ensamblados de referencia de v4.8.1, no los de v4.8.
+    dev48 = @{ Nombre = 'Developer Pack de .NET Framework 4.8'; Winget = 'Microsoft.DotNet.Framework.DeveloperPack_4'
+               WingetVersion = '4.8'; Firma = 'Microsoft Corporation'
+               Url = 'https://go.microsoft.com/fwlink/?linkid=2088517'; Descarga = 'NDP48-DevPack-ENU.exe'
+               Argumentos = '/q /norestart'; Manual = 'https://dotnet.microsoft.com/download/dotnet-framework/net48' }
     git   = @{ Nombre = 'Git para Windows'; Winget = 'Git.Git'; Firma = 'Johannes Schindelin'
                Repo = 'git-for-windows/git'; Archivo = '^Git-[\d.]+-64-bit\.exe$'
                Argumentos = '/VERYSILENT /NORESTART /NOCANCEL /SP- /SUPPRESSMSGBOXES'
@@ -87,6 +101,24 @@ function Find-Programa([string]$nombre, [string[]]$rutas) {
 function Find-Git { Find-Programa 'git.exe' @('Git\cmd\git.exe') }
 function Find-Gh  { Find-Programa 'gh.exe'  @('GitHub CLI\gh.exe') }
 
+# .NET Framework 4.8 o posterior: número «Release» del registro (528040 = 4.8, 533320 = 4.8.1). Devuelve la versión o $null.
+function Get-Net48 {
+    $release = $null
+    try { $release = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full' -Name Release -ErrorAction Stop).Release } catch { }
+    if ($release -ge 533320) { return '4.8.1' }
+    if ($release -ge 528040) { return '4.8' }
+    return $null
+}
+# Developer Pack 4.8: los ensamblados de referencia de v4.8, en la carpeta donde los busca MSBuild. Devuelve la carpeta o $null.
+function Find-Dev48 {
+    $x86 = [Environment]::GetFolderPath('ProgramFilesX86')
+    if (-not $x86) { $x86 = ${env:ProgramFiles(x86)} }
+    if (-not $x86) { return $null }
+    $carpeta = Join-Path $x86 'Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8'
+    if (Test-Path (Join-Path $carpeta 'mscorlib.dll')) { return $carpeta }
+    return $null
+}
+
 # Estado de cada herramienta: Clave, Nombre, Instalada, Detalle.
 function Get-Estado {
     $estado = @()
@@ -111,6 +143,10 @@ function Get-Estado {
                                       Detalle = $(if ($tiene8) { "en $raizDotnetSistema" } else { "no está en $raizDotnetSistema$nota" }) }
     }
     if (-not $SoloDotnet) {
+        $net48 = Get-Net48
+        $estado += [pscustomobject]@{ Clave = 'net48'; Nombre = $herramientas.net48.Nombre; Instalada = [bool]$net48; Detalle = $(if ($net48) { "versión $net48" } else { 'no encontrado' }) }
+        $dev48 = Find-Dev48
+        $estado += [pscustomobject]@{ Clave = 'dev48'; Nombre = $herramientas.dev48.Nombre; Instalada = [bool]$dev48; Detalle = $(if ($dev48) { $dev48 } else { 'no encontrado' }) }
         $git = Find-Git
         $estado += [pscustomobject]@{ Clave = 'git'; Nombre = $herramientas.git.Nombre; Instalada = [bool]$git; Detalle = $(if ($git) { $git } else { 'no encontrado' }) }
         $gh = Find-Gh
@@ -133,6 +169,8 @@ function Test-Instalada([string]$clave) {
     switch ($clave) {
         'sdk10' { return @(Get-RaicesDotnet | Where-Object { @($_.Mayores | Where-Object { $_ -ge 10 }).Count -gt 0 -and $_.Raiz.TrimEnd('\') -ieq $raizDotnetSistema.TrimEnd('\') }).Count -gt 0 }
         'sdk8'  { return @(Get-RaicesDotnet | Where-Object { $_.Mayores -contains 8 -and $_.Raiz.TrimEnd('\') -ieq $raizDotnetSistema.TrimEnd('\') }).Count -gt 0 }
+        'net48' { return [bool](Get-Net48) }
+        'dev48' { return [bool](Find-Dev48) }
         'git'   { return [bool](Find-Git) }
         'gh'    { return [bool](Find-Gh) }
     }
@@ -144,10 +182,13 @@ function Test-Instalada([string]$clave) {
 # ---------------------------------------------------------------------------------------------------------------
 
 function Install-ConWinget($h) {
+    if (-not $h.Winget) { return $false }   # sin paquete de winget adecuado: se usa directamente el enlace oficial
     $winget = Get-Command winget -ErrorAction SilentlyContinue
     if (-not $winget) { Write-Host '  winget no está disponible en este equipo: se descarga el instalador directamente.'; return $false }
-    Write-Host "  Instalando con winget ($($h.Winget))..."
-    & $winget.Source install --id $h.Winget -e --source winget --silent --accept-package-agreements --accept-source-agreements | Out-Host
+    $argumentos = @('install', '--id', $h.Winget, '-e', '--source', 'winget', '--silent', '--accept-package-agreements', '--accept-source-agreements')
+    if ($h.WingetVersion) { $argumentos += @('--version', $h.WingetVersion) }
+    Write-Host "  Instalando con winget ($((@($h.Winget, $h.WingetVersion) | Where-Object { $_ }) -join ' '))..."
+    & $winget.Source @argumentos | Out-Host
     Write-Host "  winget ha terminado (código $LASTEXITCODE)."
     return $true
 }
@@ -178,7 +219,7 @@ function Install-Directo($h) {
     New-Item -ItemType Directory -Force -Path $carpeta | Out-Null
     $url = Get-UrlUltimaVersion $h
     $nombre = [IO.Path]::GetFileName(([Uri]$url).AbsolutePath)
-    if (-not $nombre -or $nombre -notmatch '\.(exe|msi)$') { $nombre = "$($h.Winget).exe" }
+    if (-not $nombre -or $nombre -notmatch '\.(exe|msi)$') { $nombre = $(if ($h.Descarga) { $h.Descarga } else { "$($h.Winget).exe" }) }
     $archivo = Join-Path $carpeta $nombre
     try {
         Write-Host "  Descargando $url"

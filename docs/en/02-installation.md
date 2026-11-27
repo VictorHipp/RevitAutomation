@@ -13,7 +13,7 @@ Summary. You only type **one command**, in step 2; everything else is a double-c
 |---|---|---|
 | [2.1](#21-installing-git) | Install Git | Download it from the website and run it |
 | [2.2](#22-downloading-the-repository) | Download the project | `git clone https://github.com/VictorHipp/RevitAutomation.git` |
-| [2.3](#23-setting-up-the-pc-net-10-and-8-sdks) | Install the .NET 10 and 8 SDKs | Double-click `codigo\PREPARAR_PC.cmd` |
+| [2.3](#23-setting-up-the-pc-net-10-and-8-sdks) | Install the .NET 10 and 8 SDKs (and .NET Framework 4.8 if missing) | Double-click `codigo\PREPARAR_PC.cmd` |
 | [2.4](#24-getting-the-12-fitting-families) | Add the 12 fitting families (recommended) | Copy them into `codigo\familias_uniones\`, or let `CREAR_INSTALADOR.cmd` look for them |
 | [2.5](#25-creating-the-installer) | Create the installer | Double-click `codigo\CREAR_INSTALADOR.cmd` |
 | [2.6](#26-installing-in-revit) | Install in Revit | Double-click `Instalar_RevitAutomation.exe` |
@@ -43,7 +43,7 @@ Git downloads the project and, later, its updates. If you already have it, skip 
 
 Open the `RevitAutomation\codigo` folder and **double-click `PREPARAR_PC.cmd`**.
 
-1. It shows what is installed (`[OK]`) and what is missing (`[FALTA]`): .NET 10 SDK, .NET 8 SDK and Git.
+1. It shows what is installed (`[OK]`) and what is missing (`[FALTA]`): .NET 10 SDK, .NET 8 SDK, .NET Framework 4.8 (runtime), .NET Framework 4.8 Developer Pack and Git.
 2. If GitHub CLI is missing, it asks: «¿Va a desarrollar el complemento o subir cambios a GitHub? (S/N)» (will you develop the add-in or push changes to GitHub?). To only install the add-in, answer **N**.
 3. It installs what is missing with no further clicks. Windows asks for administrator permission **once**: click **«Yes»**. Progress is shown in another window.
 4. At the end it shows **«TODO LISTO»** (all done), or what failed and how to fix it. Whatever is already installed is skipped, so you can run it as often as you like.
@@ -56,6 +56,8 @@ If you prefer to install them by hand, this is what is needed:
 |---|---|---|---|---|
 | **.NET 10 SDK** (the *SDK*, not only the runtime) | Building the add-in for Revit 2027 (`net10.0-windows`) and creating the installer. It also builds the .NET Framework 4.8 versions (2023/2024): their reference assemblies come from NuGet | **Yes** | <https://dotnet.microsoft.com/download/dotnet/10.0> → *SDK* → Windows x64 | `winget install --id Microsoft.DotNet.SDK.10 -e --source winget` |
 | **.NET 8 SDK** | The versions before 2027: Revit 2025 and 2026 (`net8.0-windows`) and the engine tests (.NET 8). It is installed alongside the .NET 10 SDK, not instead of it | **Yes** | <https://dotnet.microsoft.com/download/dotnet/8.0> → *SDK* → Windows x64 | `winget install --id Microsoft.DotNet.SDK.8 -e --source winget` |
+| **.NET Framework 4.8** (runtime) | Runs Revit 2023 and 2024 and the installer. It ships with Windows 10 (version 1903 or later) and Windows 11, so it is only installed if missing | **Yes** (normally already there) | <https://dotnet.microsoft.com/download/dotnet-framework/net48> → *Runtime* | — (winget only has 4.8.1, which does not support older Windows 10) |
+| **.NET Framework 4.8 Developer Pack** | The 4.8 reference assemblies, to build 2023 and 2024 without relying on NuGet. Without it the build still works: the SDK downloads the same assemblies from NuGet. It must be **4.8** (4.8.1 does not work) | Recommended | <https://dotnet.microsoft.com/download/dotnet-framework/net48> → *Developer Pack* | `winget install --id Microsoft.DotNet.Framework.DeveloperPack_4 --version 4.8 -e --source winget` |
 | **Git for Windows** | Downloading the project (`git clone`) and its updates (`git pull`) | **Yes** | <https://git-scm.com/download/win> | `winget install --id Git.Git -e --source winget` |
 | GitHub CLI | Signing in to GitHub to push changes (`gh auth login`) | Only for development | <https://cli.github.com> | `winget install --id GitHub.cli -e --source winget` |
 

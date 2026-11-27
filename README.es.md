@@ -42,7 +42,7 @@ Las especificaciones de diseño y el historial de cambios detallados están en [
    git clone https://github.com/VictorHipp/RevitAutomation.git
    ```
 
-3. En `RevitAutomation\codigo`, doble clic en **`PREPARAR_PC.cmd`**: instala los SDK de .NET 10 y 8.
+3. En `RevitAutomation\codigo`, doble clic en **`PREPARAR_PC.cmd`**: instala los SDK de .NET 10 y 8 y, si faltan, .NET Framework 4.8 y su Developer Pack.
 4. Recomendado: copie las 12 familias de uniones en `codigo\familias_uniones\`. Si no están, `CREAR_INSTALADOR.cmd` las busca en las bibliotecas de Revit del PC (o en la carpeta que indique con `-Familias`) y, si no las encuentra, avisa y crea el instalador sin ellas.
 5. Doble clic en **`CREAR_INSTALADOR.cmd`**: crea `Instalar_RevitAutomation.exe` junto a la carpeta `codigo`.
 6. Cierre Revit y haga doble clic en **`Instalar_RevitAutomation.exe`**.
