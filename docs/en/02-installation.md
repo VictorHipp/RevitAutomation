@@ -69,7 +69,20 @@ Notes:
 
 The installer needs the fallback fitting families in `codigo\familias_uniones\`. They are **Autodesk content and are not in the repository**, so you must put them there yourself. The list of the 12 files is in [`codigo/familias_uniones/README.md`](../../codigo/familias_uniones/README.md).
 
-Choose one of these options (in order of preference):
+**Automatic search.** `CREAR_INSTALADOR.cmd` looks for any missing families and copies them to `codigo\familias_uniones\`. It searches, in this order:
+1. the folder given with `-Familias <folder>`;
+2. the `REVITAUTOMATION_FAMILIAS` environment variable;
+3. the Revit libraries installed on the PC (`C:\ProgramData\Autodesk\RVT <year>\Libraries`, newest first).
+
+If any are still missing, it **warns and creates the installer without them**. For an office, the easiest setup is to keep the 12 `.rfa` files once in a server folder and run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -Familias '<server folder>'
+```
+
+They cannot be downloaded automatically: Autodesk only provides them while you are signed in to your account, or from inside Revit.
+
+If the search does not find them, choose one of these options (in order of preference):
 
 **A. From your own copy (fastest).** Keep a private copy of the `familias_uniones` folder (USB drive, private cloud storage) and copy the 12 `.rfa` files into `codigo\familias_uniones\` after downloading the repository.
 
@@ -124,7 +137,7 @@ powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -Salida C:\Temp\ou
 | `PREPARAR_PC.cmd`: «La firma digital del archivo descargado no es válida…» | The downloaded file is not the original (interrupted download or a proxy altering it). It is not run. Try again or download it from the official link shown. |
 | «Las pruebas automáticas han fallado» | A test failed; read the lines above. To build anyway: `crear_instalador.ps1 -SinPruebas`. |
 | «La compilación para Revit <year> ha fallado» | Usually no Internet for NuGet, or a code error. Check the connection and the compiler messages. |
-| «No se encuentran las familias de uniones» | `codigo\familias_uniones\` has no `.rfa` ([2.4](#24-getting-the-12-fitting-families)). |
+| «AVISO: Faltan N de las 12 familias de uniones» | They are not in `codigo\familias_uniones\` and the automatic search did not find them. The installer is still created, without them. To include them, add them ([2.4](#24-getting-the-12-fitting-families)) and create it again. |
 | «… contiene '…' (datos de este equipo)» | A file of the package contains your user/PC name. Build without debug symbols (the script does it by default). |
 
 ## Part B. Installation

@@ -1,9 +1,10 @@
 ﻿# Genera Instalar_RevitAutomation.exe: pasa las pruebas, compila el complemento para Revit 2023, 2024, 2025, 2026 y 2027,
 # lo empaqueta y crea el instalador. No instala nada en este equipo.
 # Uso: doble clic en CREAR_INSTALADOR.cmd, o:
-#      powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 [-SinPruebas] [-Salida <carpeta>]
+#      powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 [-SinPruebas] [-Salida <carpeta>] [-Familias <carpeta>]
 # Por defecto el .exe se deja en la carpeta que contiene la del código.
-param([switch]$SinPruebas, [switch]$SinFamilias, [string]$Salida)
+# -Familias: carpeta (p. ej. del servidor de la oficina) donde buscar las familias de uniones que falten.
+param([switch]$SinPruebas, [switch]$SinFamilias, [string]$Salida, [string]$Familias)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -117,11 +118,59 @@ Get-ChildItem (Join-Path $root 'ejemplos') -Include *.dwg, *.dxf -File -Recurse 
     Copy-Item -Destination (Join-Path $comun 'Ejemplos') -Force
 # Familias de codos, tes, cruces y transiciones (tubería y conducto rectangular y redondo): el complemento las carga si
 # el proyecto y la biblioteca de Revit no tienen ninguna (si no, Revit no puede crear las uniones).
+# Son contenido de Autodesk y no están en el repositorio. Las que falten en familias_uniones se buscan, por este orden, en
+# la carpeta -Familias, en la variable de entorno REVITAUTOMATION_FAMILIAS y en las bibliotecas de Revit instaladas
+# (C:\ProgramData\Autodesk\RVT <año>\Libraries, de la más nueva a la más antigua), y se copian a familias_uniones.
+# Si aun así falta alguna, se avisa y el instalador se crea sin ella.
+$avisoFamilias = $null
+$carpetaFamilias = Join-Path $root 'familias_uniones'
 New-Item -ItemType Directory -Force -Path (Join-Path $comun 'Familias') | Out-Null
-Get-ChildItem (Join-Path $root 'familias_uniones') -Filter *.rfa -File -ErrorAction SilentlyContinue |
+if ($SinFamilias) {
+    $avisoFamilias = 'Instalador sin familias de uniones (-SinFamilias).'
+} else {
+    $necesarias = @('M_Codo - Genérico', 'M_Te - Genérica', 'M_Cruz - Genérica', 'M_Transición - Genérica',
+        'M_Codo rectangular - Radio 1', 'M_Te rectangular - Recto', 'M_Cruz rectangular -  Recta', 'M_Transición rectangular - Ángulo 2',
+        'M_Codo redondo 1', 'M_Te redonda - Recto', 'M_Cruz redonda - Recto', 'M_Transición redonda - Ángulo')
+    $faltan = @($necesarias | Where-Object { -not (Test-Path -LiteralPath (Join-Path $carpetaFamilias "$_.rfa")) })
+    if ($faltan.Count -gt 0) {
+        $origenes = @()
+        if ($Familias) { $origenes += $Familias }
+        if ($env:REVITAUTOMATION_FAMILIAS) { $origenes += $env:REVITAUTOMATION_FAMILIAS }
+        $programData = if ($env:ProgramData) { $env:ProgramData } else { 'C:\ProgramData' }
+        $origenes += @(Get-ChildItem (Join-Path $programData 'Autodesk') -Directory -Filter 'RVT *' -Force -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending | ForEach-Object { Join-Path $_.FullName 'Libraries' })
+        Write-Host "Buscando $($faltan.Count) familias de uniones que faltan en familias_uniones..."
+        New-Item -ItemType Directory -Force -Path $carpetaFamilias | Out-Null
+        foreach ($origen in $origenes) {
+            if ($faltan.Count -eq 0) { break }
+            if (-not (Test-Path -LiteralPath $origen)) {
+                if ($origen -eq $Familias -or $origen -eq $env:REVITAUTOMATION_FAMILIAS) { Write-Host "  AVISO: no existe la carpeta $origen" -ForegroundColor Yellow }
+                continue
+            }
+            # Un solo recorrido por origen; se compara el nombre exacto (Filter no distingue bien los dos espacios ni las tildes).
+            $rfas = @(Get-ChildItem -LiteralPath $origen -Recurse -File -Filter *.rfa -Force -ErrorAction SilentlyContinue)
+            foreach ($nombre in @($faltan)) {
+                $hallado = $rfas | Where-Object { $_.Name -eq "$nombre.rfa" } | Select-Object -First 1
+                if ($hallado) {
+                    Copy-Item -LiteralPath $hallado.FullName -Destination (Join-Path $carpetaFamilias $hallado.Name) -Force
+                    Write-Host "  OK   $($hallado.Name)  (de $origen)"
+                    $faltan = @($faltan | Where-Object { $_ -ne $nombre })
+                }
+            }
+        }
+        if ($faltan.Count -gt 0) {
+            $avisoFamilias = "Faltan $($faltan.Count) de las 12 familias de uniones; el instalador se crea sin ellas:`n    " +
+                (($faltan | ForEach-Object { "$_.rfa" }) -join "`n    ") +
+                "`n  Sin ellas, CAD-REV usa las familias de uniones del proyecto o de las bibliotecas de la oficina; si no hay" +
+                "`n  ninguna, Revit no crea esas uniones y lo indica en el informe." +
+                "`n  Cómo corregirlo: copie los .rfa en codigo\familias_uniones (o indique su carpeta con -Familias <carpeta> o la" +
+                "`n  variable REVITAUTOMATION_FAMILIAS) y vuelva a crear el instalador. Ver docs\es\02-instalacion.md, apartado 2.4."
+        }
+    }
+}
+Get-ChildItem -LiteralPath $carpetaFamilias -Filter *.rfa -File -ErrorAction SilentlyContinue |
     Copy-Item -Destination (Join-Path $comun 'Familias') -Force
-if ($SinFamilias) { Write-Host 'AVISO: instalador sin familias de uniones (-SinFamilias).' -ForegroundColor Yellow }
-elseif (-not (Get-ChildItem (Join-Path $comun 'Familias') -Filter *.rfa)) { Fallo 'No se encuentran las familias de uniones (familias_uniones\*.rfa).' 'Restaure la carpeta familias_uniones del proyecto y repita.' }
+if ($avisoFamilias) { Write-Host "AVISO: $avisoFamilias" -ForegroundColor Yellow }
 
 # 5) Comprobar que el paquete no lleva rutas ni nombres de este equipo
 function Test-Contiene([string]$archivo, [string[]]$terminos) {
@@ -133,7 +182,12 @@ function Test-Contiene([string]$archivo, [string[]]$terminos) {
     }
     return $null
 }
-$terminos = @($env:USERPROFILE, $env:USERNAME, $env:COMPUTERNAME) | Where-Object { $_ -and $_.Length -ge 4 }
+# Los nombres genéricos de cuenta de Windows («Administrador», «Usuario»...) no se buscan sueltos: son palabras normales
+# que aparecen en los textos del instalador («no hace falta ser administrador»). Sí se busca la ruta del perfil
+# (C:\Users\Administrador), que es lo que delataría el equipo.
+$genericos = @('Administrador', 'Administrator', 'Admin', 'Usuario', 'Usuarios', 'User', 'Users', 'Invitado', 'Guest', 'Propietario', 'Owner')
+$terminos = @($env:USERPROFILE) + @(@($env:USERNAME, $env:COMPUTERNAME) | Where-Object { $_ -and $genericos -notcontains $_ }) |
+    Where-Object { $_ -and $_.Length -ge 4 }
 foreach ($f in Get-ChildItem $stage -Recurse -File) {
     $t = Test-Contiene $f.FullName $terminos
     if ($t) { Fallo "El archivo $($f.Name) del paquete contiene '$t' (datos de este equipo)." 'Compruebe que se compila sin símbolos de depuración (DebugType=none) y repita.' }
@@ -160,6 +214,7 @@ Copy-Item $exe $final -Force
 $hash = (Get-FileHash $final -Algorithm SHA256).Hash
 Write-Host ''
 Write-Host 'INSTALADOR CREADO correctamente.' -ForegroundColor Green
+if ($avisoFamilias) { Write-Host "  AVISO: $avisoFamilias" -ForegroundColor Yellow }
 Write-Host "  Archivo: $final"
 Write-Host "  Tamaño:  $([math]::Round((Get-Item $final).Length / 1MB, 2)) MB"
 Write-Host "  SHA256:  $hash"

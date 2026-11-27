@@ -69,7 +69,20 @@ Notas:
 
 El instalador necesita las familias de uniones de reserva en `codigo\familias_uniones\`. **Son contenido de Autodesk y no están en el repositorio**, así que hay que ponerlas a mano. La lista de los 12 archivos está en [`codigo/familias_uniones/LEEME.md`](../../codigo/familias_uniones/LEEME.md).
 
-Elija una de estas opciones (por orden de preferencia):
+**Búsqueda automática.** `CREAR_INSTALADOR.cmd` busca las que falten y las copia a `codigo\familias_uniones\`. Busca, por este orden:
+1. en la carpeta indicada con `-Familias <carpeta>`;
+2. en la variable de entorno `REVITAUTOMATION_FAMILIAS`;
+3. en las bibliotecas de Revit instaladas en el equipo (`C:\ProgramData\Autodesk\RVT <año>\Libraries`, de la más nueva a la más antigua).
+
+Si aun así falta alguna, **avisa y crea el instalador sin ella**. Para la oficina, lo más cómodo es guardar una vez los 12 `.rfa` en una carpeta del servidor y usar:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -Familias '<carpeta del servidor>'
+```
+
+No se pueden descargar automáticamente: Autodesk solo las da con la sesión de su cuenta iniciada, o desde Revit.
+
+Si la búsqueda no las encuentra, elija una de estas opciones (por orden de preferencia):
 
 **A. Desde su propia copia (lo más rápido).** Guarde una copia privada de la carpeta `familias_uniones` (memoria USB, nube privada) y, después de descargar el repositorio, copie los 12 `.rfa` en `codigo\familias_uniones\`.
 
@@ -124,7 +137,7 @@ powershell -ExecutionPolicy Bypass -File crear_instalador.ps1 -Salida C:\Temp\sa
 | `PREPARAR_PC.cmd`: «La firma digital del archivo descargado no es válida…» | El archivo descargado no es el original (descarga cortada o un proxy que lo modifica). No se ejecuta. Repita o descárguelo desde el enlace oficial que indica. |
 | «Las pruebas automáticas han fallado» | Ha fallado una prueba; lea las líneas anteriores. Para generar igualmente: `crear_instalador.ps1 -SinPruebas`. |
 | «La compilación para Revit <año> ha fallado» | Normalmente falta Internet para NuGet, o hay un error en el código. Compruebe la conexión y los mensajes del compilador. |
-| «No se encuentran las familias de uniones» | `codigo\familias_uniones\` no tiene ningún `.rfa` ([2.4](#24-conseguir-las-12-familias-de-uniones)). |
+| «AVISO: Faltan N de las 12 familias de uniones» | No están en `codigo\familias_uniones\` ni la búsqueda automática las ha encontrado. El instalador se crea igualmente, sin ellas. Si las quiere dentro, póngalas ([2.4](#24-conseguir-las-12-familias-de-uniones)) y vuelva a crearlo. |
 | «… contiene '…' (datos de este equipo)» | Un archivo del paquete lleva su nombre de usuario o de equipo. Compile sin símbolos de depuración (el script lo hace por defecto). |
 
 ## Parte B. Instalación

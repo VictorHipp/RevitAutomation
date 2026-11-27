@@ -10,7 +10,7 @@ They are families from the **Autodesk Revit content library** (Spanish metric li
 
 ## What must be here before running `CREAR_INSTALADOR.cmd`
 
-`crear_instalador.ps1` stops with an error if this folder has no `.rfa` file. The original set is:
+If any are missing, `crear_instalador.ps1` looks for them and copies them here. It searches the `-Familias` folder, the `REVITAUTOMATION_FAMILIAS` variable and the installed Revit libraries. If it does not find one, it warns and creates the installer without it. The original set is:
 
 | File | Fitting |
 |---|---|

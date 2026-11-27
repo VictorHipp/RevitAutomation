@@ -10,7 +10,7 @@ Son familias de la **biblioteca de contenido de Autodesk Revit** (biblioteca mé
 
 ## Qué tiene que haber aquí antes de ejecutar `CREAR_INSTALADOR.cmd`
 
-`crear_instalador.ps1` se detiene con un error si esta carpeta no tiene ningún `.rfa`. El juego original es:
+Si falta alguna, `crear_instalador.ps1` la busca y la copia aquí. Busca en la carpeta `-Familias`, en la variable `REVITAUTOMATION_FAMILIAS` y en las bibliotecas de Revit instaladas. Si no la encuentra, avisa y crea el instalador sin ella. El juego original es:
 
 | Archivo | Pieza |
 |---|---|
